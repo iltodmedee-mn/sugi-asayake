@@ -31,7 +31,7 @@ import { canonicaliseBrandName } from "../server/search/dictionaries";
 import { processUploadedImageVariants, IMAGE_MAX_DIMENSION } from "../server/_core/imageProcessing";
 import { storagePutImageVariants } from "../server/storage";
 import { productCategories, products, productVariants } from "../drizzle/schema";
-import { asayakeImageKeyStem, importSlug, matchCategoryId, planImport, toAsayakeItem, type AsayakeItem, type SugiProductRow, type ZochilProduct } from "../shared/asayake-import";
+import { asayakeImageKeyStem, importSlug, planImport, toAsayakeItem, type AsayakeItem, type SugiProductRow, type ZochilProduct } from "../shared/asayake-import";
 import { refuseProductionDatabase } from "./_refuse-production";
 
 const argv = process.argv.slice(2);
@@ -193,11 +193,9 @@ if (!fromJson) writeFileSync(join(outDir, "asayake-catalog.json"), JSON.stringif
 
 const sugiRows = await loadSugi(db);
 const giftCardIds = new Set(sugiRows.filter(r => r.kind === "gift_card").map(r => r.id));
-const plan = planImport(sugiRows as SugiProductRow[], catalog.items);
 const categories = await db.select({ id: productCategories.id, name: productCategories.name, slug: productCategories.slug }).from(productCategories);
-const toHide = plan.sugiOnly.filter(p => !giftCardIds.has(p.productId) && sugiRows.find(r => r.id === p.productId)?.isPublished);
-const createsWithCategory = plan.creates.map(item => ({ item, categoryId: matchCategoryId(item.categoryNames, categories) }));
-const unsortedCount = createsWithCategory.filter(c => c.categoryId === null).length;
+const plan = planImport(sugiRows as SugiProductRow[], catalog.items, categories);
+const unsortedCount = plan.creates.filter(c => !c.publish).length;
 const imageChanges = plan.updates.filter(u => u.changes.imageSourceUrl);
 
 writeFileSync(join(outDir, "updates.csv"), csv(plan.updates.map(u => ({
@@ -205,12 +203,12 @@ writeFileSync(join(outDir, "updates.csv"), csv(plan.updates.map(u => ({
   priceMnt: u.changes.priceMnt ?? "", compareAtPriceMnt: u.changes.compareAtPriceMnt === undefined ? "" : u.changes.compareAtPriceMnt ?? "null",
   stockQuantity: u.changes.stockQuantity ?? "", fillsDescription: Boolean(u.changes.description), fillsNameMn: u.changes.nameMn ?? "",
 }))));
-writeFileSync(join(outDir, "creates.csv"), csv(createsWithCategory.map(({ item, categoryId }) => ({
+writeFileSync(join(outDir, "creates.csv"), csv(plan.creates.map(item => ({
   sku: item.sku, name: item.name, priceMnt: item.priceMnt, compareAtPriceMnt: item.compareAtPriceMnt ?? "", stock: item.stock, brand: item.brand ?? "",
-  asayakeCategories: item.categoryNames.join(" | "), sugiCategory: categories.find(c => c.id === categoryId)?.name ?? UNSORTED_CATEGORY.name,
-  published: categoryId !== null,
+  asayakeCategories: item.categoryNames.join(" | "), sugiCategory: categories.find(c => c.id === item.categoryId)?.name ?? UNSORTED_CATEGORY.name,
+  published: item.publish,
 }))));
-writeFileSync(join(outDir, "hide.csv"), csv(toHide.map(p => ({ productId: p.productId, sku: p.sku, name: p.name }))));
+writeFileSync(join(outDir, "hide.csv"), csv(plan.hide.map(p => ({ ...p }))));
 writeFileSync(join(outDir, "multi-variant-skipped.csv"), csv(plan.skippedMultiVariant.map(p => ({ ...p }))));
 
 const summary = [
@@ -220,7 +218,7 @@ const summary = [
   `таарсан, өөрчлөлтгүй: ${plan.unchanged}`,
   `олон хувилбартай тул алгасах: ${plan.skippedMultiVariant.length}`,
   `шинээр үүсэх: ${plan.creates.length} — нийтлэгдэх ${plan.creates.length - unsortedCount}, "${UNSORTED_CATEGORY.name}" (ноорог) ${unsortedCount}`,
-  `asayake.mn-д байхгүй (зөвхөн sugi-д): ${plan.sugiOnly.length} — нуух ${toHide.length}${hideOthers ? "" : " (--hide-others-гүй тул НУУХГҮЙ)"}`,
+  `asayake.mn-д байхгүй (зөвхөн sugi-д): ${plan.sugiOnly.length} — нуух ${plan.hide.length}${hideOthers ? "" : " (--hide-others-гүй тул НУУХГҮЙ)"}`,
   `asayake.mn дотор давхардсан баркод: ${plan.duplicateSkus.length}`,
   `тайлан: ${outDir}`,
 ];
@@ -268,10 +266,10 @@ if (unsortedCount && unsortedId === null) {
   unsortedId = created.id;
 }
 
-const createdCount = await runPool(createsWithCategory.slice(0, limit), "үүсгэсэн", async ({ item, categoryId }) => {
+const createdCount = await runPool(plan.creates.slice(0, limit), "үүсгэсэн", async item => {
     const imageUrl = withImages && item.imageUrls[0] ? await rehostImage(item.imageUrls[0], item.sku) : null;
     await createAdminProduct({
-      categoryId: categoryId ?? unsortedId!,
+      categoryId: item.categoryId ?? unsortedId!,
       name: item.name,
       nameMn: item.nameMn,
       slug: importSlug(item),
@@ -282,12 +280,12 @@ const createdCount = await runPool(createsWithCategory.slice(0, limit), "үүс�
       sku: item.sku,
       imageUrl,
       stockQuantity: item.stock,
-      isPublished: categoryId !== null,
+      isPublished: item.publish,
     });
-}, ({ item }) => item.sku, "create");
+}, item => item.sku, "create");
 
 const hidden = hideOthers
-  ? await runPool(toHide.slice(0, limit), "нуусан", async p => {
+  ? await runPool(plan.hide.slice(0, limit), "нуусан", async p => {
     await updateAdminProduct({ id: p.productId, isPublished: false });
   }, p => p.sku, "hide")
   : 0;
