@@ -4,6 +4,12 @@
 
 ---
 
+## asayake.mn → каталог импорт скрипт (2026-11-07)
+
+Tom: *"asayake.mn deerh baraanii too, medeelel, zurgiig asayake.mn ees av!"* ба *"busad buh baraag ustga! zuwhun asayake.mn baraanuudiig ashigl!"* `/grill-me`-ийн шийдвэрүүдээр `scripts/import-asayake-products.ts` (dry-run анхдагч, `--apply`, `--hide-others`, `--from-json`, `--no-images`, `--limit`; `defaultdb`-д `--i-know-this-is-production`-гүй бол `refuseProductionDatabase` татгалзана). asayake.mn нь Next.js — `__NEXT_DATA__`-аас уншина; үндсэн жагсаалт `created_at desc`-ээр тогтворгүй эрэмбэлэгддэг тул (32 хуудаснаас 684/768) 203 ангилал бүрээр нэмж татаж 768/768 болгосон. "Устгах" = нийтлэлтээс хасах: `deleteAdminProduct` захиалга/нөөцийн түүхтэй барааг өөрөө татгалздаг. Ангиллын нэр ялгаатай (Үс арчилгаа/Үс ба бие…) тул `ASAYAKE_CATEGORY_ALIASES` + дэд ангиллыг эцэг рүү — тааралгүй үлдэх 634 → 7. Бичилт бүр `createAdminProduct`/`updateAdminProduct`-оор (хувилбар, салбарын нөөцийн ledger, кэш). Локал туршилтын DB дээр алдаа 0, нөөцийн зөрүү 0, давтан run-д өөрчлөлт 0. Дэлгэрэнгүй, командууд: PRODUCT-IMPORT.md. Staging/production run хараахан ХИЙГДЭЭГҮЙ (Tom-ийн лаптопоос).
+
+---
+
 ## Ажлын урсгал: production зөвхөн main-ээс, давхар plugin хасав (2026-11-07)
 
 `/grill-me` session-ий шийдвэр (Tom: "бүгд тийм"): production 6bb42de нь `main`-д ороогүй branch-аас deploy хийгдсэн тул хэн нэгэн `main`-ээс deploy хийвэл storefront шинэчлэл чимээгүй буцах эрсдэлтэй байв. **`deploy.ps1`** одоо production-д `git merge-base --is-ancestor HEAD origin/main` шалгаж, `main` дээр байхгүй commit-ийг татгалзана (`-Staging` хамаарахгүй, `-AllowDirty` override). Tom AI Hero-ийн "Skills For Real Engineers"-ийг claude.ai бүртгэлдээ суулгасан тул репогийн `.claude/settings.json`-ийн `enabledPlugins`/`extraKnownMarketplaces`-ийг хасав (skill бүр давхар харагдаж байсан); `docs/agents/` тохиргоо хэвээр. OPERATIONS §2-д дүрэм.

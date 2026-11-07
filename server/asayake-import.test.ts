@@ -84,6 +84,11 @@ describe("planImport", () => {
     expect(plan.duplicateSkus).toEqual(["4900000000001"]);
     expect(plan.updates).toHaveLength(0);
   });
+  it("өмнөх run R2 руу хуулсан зургийг дахин хуулахгүй", () => {
+    const plan = planImport([sugi({ nameMn: "x", stockQuantity: 7, description: "d", imageUrl: "/cdn/catalog/products/asayake/4949176021975-ab12cd.webp" })], [item]);
+    expect(plan.unchanged).toBe(1);
+    expect(planImport([sugi({ imageUrl: "/cdn/catalog/products/769/old.webp" })], [item]).updates[0].changes.imageSourceUrl).toBe("https://cdn.zochil.shop/a.jpg");
+  });
   it("бүх зүйл ижил, зураггүй бол өөрчлөлтгүй", () => {
     const same = toAsayakeItem(zochil({ stock: 20, images: "[]", image: null, description: "" }))!;
     const plan = planImport([sugi({ nameMn: "x" })], [same]);
@@ -96,6 +101,11 @@ describe("matchCategoryId / importSlug / htmlToPlainText", () => {
     const cats = [{ id: 4, name: "Арьс арчилгаа" }, { id: 9, name: "Хүнс" }];
     expect(matchCategoryId(["2026 оны шинэ жилийн баярын бэлэг", "  арьс   АРЧИЛГАА "], cats)).toBe(4);
     expect(matchCategoryId(["Брендүүд"], cats)).toBeNull();
+  });
+  it("нэр нь ялгаатай ангиллыг alias-аар (Үс арчилгаа → Үс ба бие)", () => {
+    const cats = [{ id: 6, name: "Үс ба бие" }, { id: 5, name: "Эрүүл ахуй" }];
+    expect(matchCategoryId(["Брендүүд", "Үс арчилгаа"], cats)).toBe(6);
+    expect(matchCategoryId(["Шүд арчилгаа"], cats)).toBe(5);
   });
   it("slug нь латин нэр + баркод, кирилл нэрд баркод л", () => {
     expect(importSlug({ name: "NEWMO Hair Essence 75ml", sku: "4541082000756" })).toBe("newmo-hair-essence-75ml-4541082000756");

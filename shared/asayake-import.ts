@@ -187,7 +187,8 @@ export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[]): Impo
     if (row.stockQuantity !== item.stock) changes.stockQuantity = item.stock;
     if (!row.description?.trim() && item.description) changes.description = item.description;
     if (!row.nameMn?.trim() && item.nameMn) changes.nameMn = item.nameMn;
-    if (item.imageUrls[0]) changes.imageSourceUrl = item.imageUrls[0];
+    // Өмнөх run R2 руу хуулсан бол дахин хуулахгүй (давтан ажиллуулахад 768 зураг дахин upload хийхгүй).
+    if (item.imageUrls[0] && !row.imageUrl?.includes(asayakeImageKeyStem(item.sku))) changes.imageSourceUrl = item.imageUrls[0];
     if (Object.keys(changes).length) plan.updates.push({ productId: row.id, sku: row.sku, name: row.name, changes, hadImage: Boolean(row.imageUrl) });
     else plan.unchanged += 1;
   }
@@ -197,12 +198,32 @@ export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[]): Impo
   return plan;
 }
 
-/** asayake.mn-ийн ангиллын нэрийг sugi-ийн ангилалтай тулгана (том/жижиг үсэг, зай үл хамаарна). */
+/**
+ * asayake.mn-ийн ҮНДСЭН ангилал → sugi-ийн ангилал, нэр нь ялгаатай хосууд (2026-11-07,
+ * хоёр сайтын ангиллын модыг харьцуулж). Ижил нэртэй нь (Арьс арчилгаа, Хүнс, Эрүүл
+ * мэнд) энд хэрэггүй. "Брендүүд", "…баярын бэлэг" нь бүтээгдэхүүний төрөл биш тул
+ * зориуд байхгүй — бараа өөр ангилалд давхар харьяалагдвал тэрээр тулгагдана.
+ */
+export const ASAYAKE_CATEGORY_ALIASES: Record<string, string> = {
+  "Үс арчилгаа": "Үс ба бие",
+  "Нүүр будалт": "Гоо сайхан",
+  "Гэр ахуй": "Эрүүл ахуй",
+  "Шүд арчилгаа": "Эрүүл ахуй",
+  "Хүүхдийн бүтээгдэхүүн": "Ээж ба хүүхэд",
+};
+
+/** R2 дахь импортолсон зургийн түлхүүрийн эх хэсэг (`storagePutImageVariants` араас нь hash залгана). */
+export function asayakeImageKeyStem(sku: string): string {
+  return `catalog/products/asayake/${sku}`;
+}
+
+/** asayake.mn-ийн ангиллын нэрийг (ялгаатай нэрийг ASAYAKE_CATEGORY_ALIASES-ээр) sugi-ийн ангилалтай тулгана; том/жижиг үсэг, зай үл хамаарна. */
 export function matchCategoryId(names: string[], categories: Array<{ id: number; name: string }>): number | null {
   const key = (s: string) => s.toLocaleLowerCase("mn").replace(/\s+/g, " ").trim();
   const byName = new Map(categories.map(c => [key(c.name), c.id]));
+  const aliases = new Map(Object.entries(ASAYAKE_CATEGORY_ALIASES).map(([from, to]) => [key(from), key(to)]));
   for (const name of names) {
-    const id = byName.get(key(name));
+    const id = byName.get(key(name)) ?? byName.get(aliases.get(key(name)) ?? "");
     if (id !== undefined) return id;
   }
   return null;
