@@ -151,6 +151,7 @@ Store Japan" — /admin-аас дарж бичнэ, хайлтын брэнди�
 | React, бусад сан | MIT/нээлттэй | Юу ч хийх шаардлагагүй |
 | UI TripleD (storefront-ийн хэдэн бүрэлдэхүүн, 2026-10-18) | MIT — "Copyright (c) 2026 uitripled" | Зохиогчийн мөр ба лицензийн текст `THIRD_PARTY_NOTICES.md`-д; зөөсөн файл бүрийн толгойд эх URL. Код хадгалахад л хангалттай |
 | framer-motion, class-variance-authority, @radix-ui/react-slot | MIT / Apache-2.0 (cva) | Юу ч хийх шаардлагагүй (npm багцын лиценз багцдаа) |
+| mattpocock/skills (AI Hero, Claude Code plugin, 2026-11-07) | MIT — "Copyright (c) 2026 Matt Pocock" | Зөвхөн хөгжүүлэгчийн AI туслахын skill — сайтад ордоггүй, репод хуулагдаагүй (`.claude/settings.json`-ийн `enabledPlugins`). Юу ч хийх шаардлагагүй |
 
 ---
 

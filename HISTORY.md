@@ -4,6 +4,12 @@
 
 ---
 
+## AI Hero skills — mattpocock/skills plugin (2026-11-07)
+
+Эзэн: *"https://www.aihero.dev/ instal this on this repo"*. AI Hero-ийн суулгах зүйл нь Matt Pocock-ийн **mattpocock/skills** (MIT, 27 skill: `/grill-me`, `/grill-with-docs`, `/tdd`, `/to-spec`, `/to-tickets`, `/triage`, `/code-review`, `/diagnosing-bugs`…). Эзний сонголт: **repo-д идэвхжсэн plugin** (өөрөө шинэчлэгдэнэ, файл хуулахгүй) ба **GitHub Issues** tracker. `.claude/settings.json`-д `enabledPlugins` + `extraKnownMarketplaces` (`anthropics/claude-plugins-official`) — хоёр лаптоп, cloud session бүгд нэг тохиргоо; одоо байсан `permissions`, `includeCoAuthoredBy:false` хэвээр. `/setup-matt-pocock-skills`-ийн гаргадаг тохиргоог гараар бичсэн: `docs/agents/issue-tracker.md` (GitHub), `triage-labels.md` (анхдагч 5 label), `domain.md` (single-context). `## Agent skills` блок **PROJECT-GUIDE.md**-д — `/CLAUDE.md` нь лаптоп бүрийн gitignore-д орсон файл (PROJECT-GUIDE-ийг import хийдэг) тул хуваалцах цор ганц газар. GitHub-ийн 5 label үүсгээгүй (cloud-д `gh` байхгүй) — лаптоп дээр `gh label create`.
+
+---
+
 ## Storefront UI шинэчлэл — UI TripleD, хуваалцсан карт (2026-10-18)
 
 Эзний даалгавар: storefront-ийг "орчин үеийн, япон эмийн сангийн (drugstore) мэдрэмжтэй" болгох, UI TripleD (ui.tripled.work, MIT)-ийн тохирох бүрэлдэхүүнийг ашиглах, бизнесийн логик хөндөхгүй. Эзний шийдвэр (2026-10-18): **Брэнд студийн өнгө/фонт/хэлбэрийн токен (Linen, `--primary`, Golos, 4px булан) ХЭВЭЭР** — найруулга, бүрэлдэхүүн, хөдөлгөөн, төлөвүүд л шинэчлэгдэнэ; зөвхөн storefront (/admin, /face-approve хөндөхгүй); framer-motion зөвхөн LazyMotion + `m.*`-ээр, eager bundle-д биш.

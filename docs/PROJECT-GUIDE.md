@@ -412,6 +412,22 @@ Session бүр энэ файлыг бүтнээр ачаалдаг тул **эн
 session-ий тэмдэглэл HISTORY.md-д, дүрэм л энд. Ажиллах дүрэм (аль загвар аль
 ажилд, output-оо хэрхэн таслах, session-ээ хэрхэн хуваах) TOKEN-USAGE.md-д.
 
+## Agent skills (mattpocock/skills — AI Hero, 2026-11-07)
+
+`.claude/settings.json`-д repo-д идэвхжсэн plugin (`/grill-me`, `/tdd`, `/to-spec`, `/triage`…). Энэ гарын авлагын дүрэм давамгайлна (монгол commit, AI attribution-гүй, HISTORY.md).
+
+### Issue tracker
+
+GitHub Issues, `tmorius-eng/sugi-asayake` (`gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` + `docs/adr/`, created lazily. See `docs/agents/domain.md`.
+
 ## ⚠️ Tom-оос хүлээж буй (2026-09-14, "Za bugdiin hii"-ийн дараа)
 - ✅ **(2026-10-06) Брэнд студи + эзэн солих PRODUCTION-Д ГАРСАН** — Tom deploy хийв (`0e5d639`, `DEPLOY-RESTART-OK`, /health 200); 0103–0105 prod-д аль хэдийн байсан (сервер REQUIRED_MIGRATIONS-аар эхэлсэн). Гаднаас батлав: brand-tokens, theme-color `#df1f3d` (өөрчлөгдөөгүй), статик таб дүрс, динамик manifest, R2 постер 200, `admin.brandStudio` 401. /admin → Брэнд студи; бүх шинэ боломж анхдагчаар унтраалттай.
 - **(2026-10-06) Эзний шийдвэр хүлээж буй**: (1) репод `LICENSE` — худалдааны гэрээний нөхцөл (OWNER-HANDOVER §6); (2) TinyMCE `gpl` түлхүүр — худалдааны лиценз эсвэл MIT засварлагч; (3) Gemini API түлхүүрийг солих (чатад ил болсон); (4) баярын постерыг өөрийн зургаар солих бол → Баярын загвар → Тохируулах → Постер солих.

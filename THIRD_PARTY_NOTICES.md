@@ -3,6 +3,11 @@
 Энэ репозиторт гуравдагч талын эх кодоос ЗӨӨЖ, өөрчилж оруулсан хэсгүүд. npm-ээр суудаг
 багцууд (React, framer-motion …) өөрсдийн лицензээ `node_modules`-д агуулдаг тул энд биш.
 
+## mattpocock/skills (AI Hero)
+
+- Эх сурвалж: https://github.com/mattpocock/skills (MIT, "Copyright (c) 2026 Matt Pocock"), https://www.aihero.dev
+- Арга: Claude Code plugin `mattpocock-skills@claude-plugins-official` — `.claude/settings.json`-д идэвхжүүлсэн, эх кодыг репод ХУУЛААГҮЙ. `docs/agents/*.md` нь plugin-ий `setup-matt-pocock-skills` загвараас үүссэн тохиргоо.
+
 ## UI TripleD
 
 - Эх сурвалж: https://ui.tripled.work/ (репозитор: github.com/moumen-soliman/uitripled, `master`)
