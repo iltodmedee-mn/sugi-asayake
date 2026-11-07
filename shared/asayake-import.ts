@@ -58,7 +58,13 @@ export type SugiProductRow = {
   compareAtPriceMnt: number | null;
   stockQuantity: number;
   variantCount: number;
+  /** Нуух дүрэмд: бэлгийн картыг (`gift_card`) хэзээ ч нуухгүй, аль хэдийн нуусныг дахин тоолохгүй. */
+  kind?: string;
+  isPublished?: boolean;
 };
+
+/** Шинээр үүсэх бараа + шийдсэн ангилал: ангилал таарвал НИЙТЛЭНЭ, таараагүй бол ноорог (нуугдмал ангилалд). */
+export type PlannedCreate = AsayakeItem & { categoryId: number | null; publish: boolean };
 
 /** "4 541082 000756", "04541082000756" → "4541082000756" (EAN-13/8-ийн тэргүүлэх 0-ийг тэгшитгэнэ). */
 export function normaliseBarcode(value: string | null | undefined): string {
@@ -153,18 +159,24 @@ export type ImportPlan = {
   /** Олон хувилбартай бараа — нэг үлдэгдлийг аль хувилбарт бичихийг мэдэхгүй тул хөндөхгүй. */
   skippedMultiVariant: Array<{ productId: number; sku: string; name: string }>;
   unchanged: number;
-  creates: AsayakeItem[];
+  creates: PlannedCreate[];
+  /** asayake.mn-д байхгүй бүх sugi бараа (тайланд). */
   sugiOnly: Array<{ productId: number; sku: string; name: string }>;
+  /** `--hide-others` үед нийтлэлтээс хасах нь: sugiOnly-оос бэлгийн карт, аль хэдийн нуугдсаныг хассан. */
+  hide: Array<{ productId: number; sku: string; name: string }>;
   /** asayake.mn дотор давхардсан баркод (хоёр дахийг нь алгасна). */
   duplicateSkus: string[];
 };
 
-/** Хоёр каталогийг тулгаж юу өөрчлөгдөхийг тооцно. DB-д юу ч бичихгүй. */
-export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[]): ImportPlan {
+/**
+ * Хоёр каталогийг тулгаж юу өөрчлөгдөхийг тооцно. DB-д юу ч бичихгүй. Бүх бизнесийн дүрэм энд
+ * (скрипт зөвхөн IO хийнэ): `categories` нь шинэ барааны ангиллыг (нэр + ASAYAKE_CATEGORY_ALIASES-ээр) шийднэ.
+ */
+export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[], categories: Array<{ id: number; name: string }> = []): ImportPlan {
   const bySku = new Map<string, SugiProductRow>();
   for (const row of sugi) bySku.set(normaliseBarcode(row.sku), row);
 
-  const plan: ImportPlan = { updates: [], skippedMultiVariant: [], unchanged: 0, creates: [], sugiOnly: [], duplicateSkus: [] };
+  const plan: ImportPlan = { updates: [], skippedMultiVariant: [], unchanged: 0, creates: [], sugiOnly: [], hide: [], duplicateSkus: [] };
   const seen = new Set<string>();
   for (const item of asayake) {
     if (seen.has(item.sku)) {
@@ -174,7 +186,8 @@ export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[]): Impo
     seen.add(item.sku);
     const row = bySku.get(item.sku);
     if (!row) {
-      plan.creates.push(item);
+      const categoryId = matchCategoryId(item.categoryNames, categories);
+      plan.creates.push({ ...item, categoryId, publish: categoryId !== null });
       continue;
     }
     if (row.variantCount !== 1) {
@@ -193,7 +206,10 @@ export function planImport(sugi: SugiProductRow[], asayake: AsayakeItem[]): Impo
     else plan.unchanged += 1;
   }
   for (const row of sugi) {
-    if (!seen.has(normaliseBarcode(row.sku))) plan.sugiOnly.push({ productId: row.id, sku: row.sku, name: row.name });
+    if (seen.has(normaliseBarcode(row.sku))) continue;
+    const entry = { productId: row.id, sku: row.sku, name: row.name };
+    plan.sugiOnly.push(entry);
+    if (row.kind !== "gift_card" && row.isPublished !== false) plan.hide.push(entry);
   }
   return plan;
 }

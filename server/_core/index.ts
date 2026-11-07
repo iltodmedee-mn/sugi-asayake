@@ -176,7 +176,9 @@ async function startServer() {
     // хэлбэрийг `maskErrorShape` бусад бүх газарт нуудаг. Дэлгэрэнгүйг
     // админын `systemHealth` procedure хэвээр үзүүлнэ.
     if (!db.ok) console.error("[health] database ping failed:", db.error);
-    res.status(db.ok ? 200 : 503).json({ ok: db.ok, database: db.ok ? "up" : "down", time: new Date().toISOString() });
+    // `reason` нь зөвхөн ангилал (tls_ca/network/…) — алдааны текст биш. uptime alert-д орж
+    // "tls_ca" үед HeatWave CA солигдсоныг шууд хэлнэ (2026-11-07).
+    res.status(db.ok ? 200 : 503).json({ ok: db.ok, database: db.ok ? "up" : "down", ...(db.ok ? {} : { reason: db.kind ?? "other" }), time: new Date().toISOString() });
   });
   // Хүлээгдсэн, хэрэглэгчид харагдах үр дүн (буруу оролт, буруу нууц үг,
   // ашигласан купон, ...) — эдгээрийг Honeybadger-т мэдээлбэл үнэгүй tier-ийн

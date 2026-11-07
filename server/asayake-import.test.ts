@@ -89,6 +89,24 @@ describe("planImport", () => {
     expect(plan.unchanged).toBe(1);
     expect(planImport([sugi({ imageUrl: "/cdn/catalog/products/769/old.webp" })], [item]).updates[0].changes.imageSourceUrl).toBe("https://cdn.zochil.shop/a.jpg");
   });
+  it("нуух жагсаалт: бэлгийн карт ба аль хэдийн нуугдсан бараа орохгүй", () => {
+    const plan = planImport(
+      [
+        sugi({ id: 10, sku: "4900000000010", name: "Хуучин бараа", isPublished: true }),
+        sugi({ id: 11, sku: "4900000000011", name: "Бэлгийн карт 50 000₮", kind: "gift_card", isPublished: true }),
+        sugi({ id: 12, sku: "4900000000012", name: "Аль хэдийн нуусан", isPublished: false }),
+      ],
+      [item],
+    );
+    expect(plan.sugiOnly.map(p => p.productId)).toEqual([10, 11, 12]);
+    expect(plan.hide.map(p => p.productId)).toEqual([10]);
+  });
+  it("шинэ бараа: ангилал таарвал нийтэлнэ, таараагүй бол ноорог (categoryId null)", () => {
+    const skin = toAsayakeItem(zochil({ id: 20, sku: "4900000000020" }), { categoryNames: ["Маск", "Арьс арчилгаа"] })!;
+    const odd = toAsayakeItem(zochil({ id: 21, sku: "4900000000021" }), { categoryNames: ["Брендүүд"] })!;
+    const plan = planImport([], [skin, odd], [{ id: 4, name: "Арьс арчилгаа" }]);
+    expect(plan.creates.map(c => [c.sku, c.categoryId, c.publish])).toEqual([["4900000000020", 4, true], ["4900000000021", null, false]]);
+  });
   it("бүх зүйл ижил, зураггүй бол өөрчлөлтгүй", () => {
     const same = toAsayakeItem(zochil({ stock: 20, images: "[]", image: null, description: "" }))!;
     const plan = planImport([sugi({ nameMn: "x" })], [same]);

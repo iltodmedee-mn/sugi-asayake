@@ -36,7 +36,10 @@ param(
   [string]$DatabaseUrl = $env:DATABASE_URL,
   [string]$MySqlDumpPath = $env:MYSQLDUMP_PATH,
   [string]$OutputDir = (Join-Path $PSScriptRoot "..\backups"),
-  [int]$RetentionCount = 14
+  [int]$RetentionCount = 14,
+  # 2026-11-07: CA-гаар баталгаажуулна (VERIFY_CA). Өмнө нь зөвхөн --ssl-mode=REQUIRED байсан тул
+  # HeatWave CA солигдоход апп унаж байхад backup "амжилттай" үргэлжилж, дохиог нууж байв.
+  [string]$SslCa = $env:DATABASE_CA_CERT_PATH
 )
 
 $ErrorActionPreference = "Stop"
@@ -78,14 +81,15 @@ $previousPwd = $env:MYSQL_PWD
 $env:MYSQL_PWD = $dbPass
 try {
   $dumpArgs = @("--host=$dbHost", "--port=$dbPort", "--user=$dbUser")
-  if ($DatabaseUrl -match '(?i)([?&])ssl-mode=required(&|$)') { $dumpArgs += "--ssl-mode=REQUIRED" }
+  if ($SslCa -and (Test-Path $SslCa)) { $dumpArgs += @("--ssl-mode=VERIFY_CA", "--ssl-ca=$SslCa") }
+  elseif ($DatabaseUrl -match '(?i)([?&])ssl-mode=required(&|$)') { $dumpArgs += "--ssl-mode=REQUIRED" }
   # Same flags as migrate-to-oracle-mysql.ps1: HeatWave is GTID-enabled and its
   # admin user has neither SUPER (needed to apply GTID_PURGED on restore) nor
   # PROCESS (needed to read tablespace metadata). Harmless on other servers.
   $dumpArgs += @("--set-gtid-purged=OFF", "--no-tablespaces")
   $dumpArgs += @("--single-transaction", "--routines", "--triggers", "--result-file=$sqlFile")
   & $MySqlDumpPath @dumpArgs $dbName
-  if ($LASTEXITCODE -ne 0) { throw "mysqldump exited with code $LASTEXITCODE" }
+  if ($LASTEXITCODE -ne 0) { throw "mysqldump exited with code $LASTEXITCODE (TLS/сертификатын алдаа бол HeatWave CA солигдсон байж магадгүй: .\scripts\oci\rotate-db-ca.ps1)" }
 } catch {
   # A failed dump leaves a partial .sql behind; remove it before re-throwing.
   if (Test-Path $sqlFile) { Remove-Item $sqlFile -Force -ErrorAction SilentlyContinue }

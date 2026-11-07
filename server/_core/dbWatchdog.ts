@@ -1,6 +1,7 @@
 import { dbPing } from "../db/connection";
 import { notifyOwner } from "./notification";
 import { publicOrigin } from "./publicUrl";
+import { classifyDbError, type DbFailureKind } from "./dbConnection";
 
 /**
  * Өгөгдлийн сан унахад эзэнд имэйл (2026-10-01).
@@ -64,6 +65,21 @@ export function stepWatchdog(state: WatchdogState, result: { ok: boolean; error?
 
 const minutes = (ms: number) => Math.max(1, Math.round(ms / 60_000));
 
+/** Алдааны төрөл бүрт хийх эхний алхам — "tls_ca" нь HeatWave CA солигдсон (09-28, ~11-01-нд болсон). */
+export function hintFor(kind: DbFailureKind): string {
+  switch (kind) {
+    case "tls_ca":
+      return "HeatWave CA-гаа сольсон бололтой. Лаптопоос (репогийн root): .\\scripts\\oci\\rotate-db-ca.ps1 — шалгана; -Apply — шинэ CA-г VM-ийн prod+staging-д тавьж pm2 restart (docs/OPERATIONS.md §DB CA).";
+    case "network":
+    case "timeout":
+      return "DB-д сүлжээгээр хүрэхгүй байна — OCI консол дээр HeatWave instance асаалттай эсэх, VCN/security list-ийг шалгана уу.";
+    case "auth":
+      return "DB нэвтрэлт татгалзсан — VM-ийн .env-ийн DATABASE_URL хэрэглэгч/нууц үг өөрчлөгдсөн эсэхийг шалгана уу.";
+    default:
+      return "Дэлгэрэнгүй: ssh sugi-oci 'pm2 logs sugi --lines 60'.";
+  }
+}
+
 function alertContent(state: WatchdogState, repeat: boolean, now: number) {
   const since = state.downSince !== null ? new Date(state.downSince).toISOString() : "?";
   const lines = [
@@ -72,8 +88,9 @@ function alertContent(state: WatchdogState, repeat: boolean, now: number) {
     "Хэрэглэгчид каталог, сагс, захиалга ашиглаж чадахгүй ('Каталогийг ачаалж чадсангүй').",
     `Эхэлсэн: ${since}`,
     `Алдаа: ${state.lastError ?? "тодорхойгүй"}`,
+    `Төрөл: ${classifyDbError(state.lastError)}`,
     "",
-    "\"certificate signature failure\" бол HeatWave CA-гаа сольсон байж магадгүй (2026-09-28-нд болсон) — docs/PROJECT-GUIDE.md болон HISTORY.md-ийн 2026-10-01-ний 'Production DB тасалдал' хэсгийг үзнэ үү.",
+    hintFor(classifyDbError(state.lastError)),
   ];
   return lines.join("\n");
 }

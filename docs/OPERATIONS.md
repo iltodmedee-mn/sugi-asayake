@@ -218,6 +218,25 @@ pnpm exec tsx scripts/image-avif-backfill.ts --apply
 Bot Fight Mode унтраах · Pro багцын дүрмээр `/health`-д зөвшөөрөл гаргах ·
 эсвэл VM өөрөө гадагш "амьд" дохио илгээдэг (healthchecks.io) болгох.
 
+⚠️ **2026-11-07**: `uptime.yml` 09-24-өөс хойш YAML алдаатай байсан тул GitHub огт ажиллуулаагүй
+(10-01, ~11-01-ний DB ослуудад мэдэгдэл ирээгүй). Засагдсан; `server/workflows-guard.test.ts` дахин
+эвдрэхийг CI-д барина. Cloudflare-ийн дээрх хаалт хэвээр бол alert нь "monitor blocked" гэж ирнэ.
+
+### DB CA (HeatWave) солигдох
+
+HeatWave `MySQL_Endpoint_CA`-гаа засвар үйлчилгээгээр анхааруулгагүй сольдог (09-28, ~11-01).
+Шинж: `/health` → `{"database":"down","reason":"tls_ca"}`, лог/watchdog-д `certificate signature failure`.
+Нээлттэй байсан холболтууд хэд хоног амьд байдаг тул унах нь хоцорч мэдэгддэг.
+
+```powershell
+.\scripts\oci\rotate-db-ca.ps1          # шалгах: VM-ээс серверийн CA-г prod/staging-ийн oci-ca.pem-тэй тулгана
+.\scripts\oci\rotate-db-ca.ps1 -Apply   # солих: .bak-<огноо> хадгалж, pm2 restart, /health up хүлээх, лаптопын CA-г татах
+```
+
+Шинэ CA-г серверийн гинжнээс авдаг ч серверийг `Verify return code: 0`-оор баталгаажуулсан
+сертификатыг л авна (`scripts/oci/rotate-db-ca.sh`). Backup (`db-backup.ps1`) одоо `VERIFY_CA`-аар
+холбогддог тул CA солигдоход бас унаж, дохио өгнө.
+
 ---
 
 ## 6. Тест
@@ -358,6 +377,7 @@ VM дээрх `.env` бичих.
 ## 9. Хоёр лаптоп — session бүрийн эхэнд
 
 ```powershell
+.\scripts\oci\doctor.ps1     # фолдер, branch, .env-ийн түлхүүрүүд, ssh, тунел, CA = VM, production /health
 git fetch --all --prune ; git status -sb
 ```
 
