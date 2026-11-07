@@ -377,6 +377,7 @@ VM дээрх `.env` бичих.
 ## 9. Хоёр лаптоп — session бүрийн эхэнд
 
 ```powershell
+.\scripts\oci\doctor.ps1     # фолдер, branch, .env-ийн түлхүүрүүд, ssh, тунел, CA = VM, production /health
 git fetch --all --prune ; git status -sb
 ```
 

@@ -389,6 +389,7 @@ host=github.com
 ## ⚠️ ХОЁР ЛАПТОП — session бүрийн эхэнд ЗААВАЛ
 
 ```powershell
+.\scripts\oci\doctor.ps1      # бэлэн эсэх: фолдер, .env, ssh, тунел, CA = VM, production /health
 git fetch --all --prune ; git status -sb
 ```
 
