@@ -173,8 +173,12 @@ function csv(rows: Array<Record<string, unknown>>): string {
   return [cols.join(","), ...rows.map(r => cols.map(c => cell(r[c])).join(","))].join("\n") + "\n";
 }
 
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL тохируулаагүй байна — ажиллаж буй хөгжүүлэлтийн хуулбарын .env (ба oci-ca.pem)-ийг энэ фолдерт хуулна уу (docs/OPERATIONS.md §8).");
+  process.exit(2);
+}
 const db = await getDb();
-if (!db) throw new Error("DATABASE_URL-д холбогдож чадсангүй");
+if (!db) throw new Error("DATABASE_URL-д холбогдож чадсангүй (ssh тунель 127.0.0.1:3307 ажиллаж байна уу?)");
 mkdirSync(outDir, { recursive: true });
 
 const fromJson = option("--from-json");
