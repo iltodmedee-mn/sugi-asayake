@@ -23,8 +23,16 @@ foreach ($key in "DATABASE_ADMIN_URL", "DATABASE_URL") {
 }
 if (-not $databaseUrl) { throw "DATABASE_ADMIN_URL / DATABASE_URL is missing from $envFile" }
 
+# DATABASE_CA_CERT_PATH (".\oci-ca.pem" гэх мэт, репогийн root-оос) — backup-ийг CA-аар баталгаажуулна.
+$caLine = Get-Content $envFile | Where-Object { $_ -match "^DATABASE_CA_CERT_PATH=" } | Select-Object -First 1
+$sslCa = ""
+if ($caLine) {
+  $caPath = $caLine.Substring("DATABASE_CA_CERT_PATH=".Length).Trim().Trim('"').Trim("'")
+  $sslCa = if ([System.IO.Path]::IsPathRooted($caPath)) { $caPath } else { Join-Path $RepositoryRoot $caPath }
+}
 & (Join-Path $PSScriptRoot "db-backup.ps1") `
   -DatabaseUrl $databaseUrl `
+  -SslCa $sslCa `
   -OutputDir (Join-Path $RepositoryRoot "backups") `
   -RetentionCount $RetentionCount
 if ($LASTEXITCODE -ne 0) { throw "Daily database backup failed with exit code $LASTEXITCODE" }

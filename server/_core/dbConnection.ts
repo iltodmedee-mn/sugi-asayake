@@ -131,3 +131,24 @@ export function describeTransport(plan: ConnectionPlan): string {
       return `MySQL: TLS to ${plan.options.host}:${plan.options.port} but the server certificate is NOT verified -- set DATABASE_CA_CERT (Aiven Console -> service -> Overview -> CA certificate) to close the remaining man-in-the-middle gap.`;
   }
 }
+
+/**
+ * Холболтын алдааны ТӨРӨЛ (2026-11-07). HeatWave CA-гаа хоёр удаа (09-28, ~11-01) чимээгүй
+ * сольсон бөгөөд хоёуланд нь `/health` зөвхөн "down" гэдэг байсан тул шалтгааныг хүн
+ * лаптопоос гараар олсон. Төрлийг нь `/health`, watchdog-ийн мэдэгдэл, uptime alert-д
+ * гаргаснаар "tls_ca" үед засварын команд (scripts/oci/rotate-db-ca.sh) шууд мэдэгдэнэ.
+ * Алдааны ТЕКСТ нийтэд гарахгүй (index.ts) — зөвхөн энэ ангилал.
+ */
+export type DbFailureKind = "tls_ca" | "tls" | "auth" | "network" | "timeout" | "config" | "other";
+
+export function classifyDbError(message: string | null | undefined): DbFailureKind {
+  const m = (message ?? "").toLowerCase();
+  if (!m) return "other";
+  if (/certificate signature failure|self[- ]signed certificate|unable to (get|verify) (local )?issuer|certificate has expired|cert_has_expired|unable_to_verify_leaf|certificate verify failed|depth_zero_self_signed/.test(m)) return "tls_ca";
+  if (/handshake_ssl_error|ssl|tls/.test(m)) return "tls";
+  if (/access denied|er_access_denied|er_dbaccess_denied|authentication/.test(m)) return "auth";
+  if (/etimedout|timed? ?out/.test(m)) return "timeout";
+  if (/econnrefused|enotfound|ehostunreach|enetunreach|econnreset|eai_again|getaddrinfo/.test(m)) return "network";
+  if (/database_url|ca certificate is configured|must start with mysql/.test(m)) return "config";
+  return "other";
+}

@@ -4,7 +4,7 @@
 
 import { sql, type SQLWrapper } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { describeTransport, planMysqlConnection } from "../_core/dbConnection";
+import { classifyDbError, describeTransport, planMysqlConnection, type DbFailureKind } from "../_core/dbConnection";
 import { orders } from "../../drizzle/schema";
 import { sqlQueryLogger } from "../_core/sqlQueryLog";
 
@@ -173,16 +173,17 @@ export async function getDb() {
 // SELECT 1, not a real query, so it's cheap enough to run on every dashboard
 // load. Never throws: reports the failure instead, same contract as
 // storagePing() in server/storage.ts.
-export async function dbPing(): Promise<{ ok: boolean; error?: string }> {
+export async function dbPing(): Promise<{ ok: boolean; error?: string; kind?: DbFailureKind }> {
   try {
     const db = await getDb();
-    if (!db) return { ok: false, error: "DATABASE_URL тохируулаагүй байна." };
+    if (!db) return { ok: false, error: "DATABASE_URL тохируулаагүй байна.", kind: "config" };
     await db.execute(sql`SELECT 1`);
     return { ok: true };
   } catch (error) {
     // drizzle-ийн "Failed query: SELECT 1" нь шалтгааныг (TLS, auth, timeout) `cause`-д нуудаг.
     const cause = error instanceof Error && error.cause instanceof Error ? error.cause.message : null;
     const message = error instanceof Error ? error.message.split("\n")[0] : "Unknown database error";
-    return { ok: false, error: cause ? `${message} — ${cause}` : message };
+    const text = cause ? `${message} — ${cause}` : message;
+    return { ok: false, error: text, kind: classifyDbError(text) };
   }
 }
