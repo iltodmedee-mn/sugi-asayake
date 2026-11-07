@@ -16,6 +16,7 @@
 //   --out <хавтас>       тайлангийн хавтас (анхдагч backups/asayake-import/<огноо>/ — gitignore-д)
 //   --no-images          зураг R2 руу хуулахгүй (зөвхөн өгөгдөл)
 //   --limit <N>          эхний N өөрчлөлт/шинэ бараа л (туршилт)
+//   --concurrency <N>    зэрэг боловсруулах барааны тоо (анхдагч 6, дээд 16)
 //   --i-know-this-is-production   production (`defaultdb`) дээр --apply хийх (Tom л, staging-ийг шалгасны дараа)
 //
 // "Устгах" = НИЙТЛЭЛТЭЭС ХАСАХ (isPublished=false): захиалга, нөөцийн түүхтэй барааг
@@ -43,6 +44,9 @@ const apply = flag("--apply");
 const hideOthers = flag("--hide-others");
 const withImages = !flag("--no-images");
 const limit = option("--limit") ? Number(option("--limit")) : Infinity;
+/** Зэрэг боловсруулах барааны тоо. Бараа бүр өөр мөр тул зөрчилгүй; тунелээр нэг бүрчлэн
+ *  явуулахад 756 бараа ~30 минут (бараа бүрт ~10 асуулга Токио руу), зурагтай бол 1–2 цаг байв. */
+const concurrency = Math.max(1, Math.min(16, Number(option("--concurrency") ?? 6)));
 const outDir = option("--out") ?? join("backups", "asayake-import", new Date().toISOString().replace(/[:.]/g, "-"));
 
 const SITE = "https://asayake.mn";
@@ -229,19 +233,34 @@ if (!apply) {
 }
 
 const failures: Array<{ sku: string; step: string; error: string }> = [];
-let done = 0;
 
-for (const update of plan.updates.slice(0, limit)) {
-  const { imageSourceUrl, ...fields } = update.changes;
-  try {
-    const imageUrl = withImages && imageSourceUrl ? await rehostImage(imageSourceUrl, update.sku) : undefined;
-    await updateAdminProduct({ id: update.productId, ...fields, ...(imageUrl ? { imageUrl } : {}) });
-    done += 1;
-  } catch (error) {
-    failures.push({ sku: update.sku, step: "update", error: (error as Error).message });
-  }
-  if (done % 25 === 0) console.log(`  шинэчилсэн ${done}/${Math.min(plan.updates.length, limit)}`);
+/** `items`-ийг `concurrency` ширхгээр зэрэг; 25 тутамд явц хэвлэнэ. Амжилттай болсны тоог буцаана. */
+async function runPool<T>(items: T[], label: string, work: (item: T) => Promise<void>, skuOf: (item: T) => string, step: string): Promise<number> {
+  let next = 0;
+  let finished = 0;
+  let succeeded = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const item = items[next++];
+      try {
+        await work(item);
+        succeeded += 1;
+      } catch (error) {
+        failures.push({ sku: skuOf(item), step, error: (error as Error).message });
+      }
+      finished += 1;
+      if (finished % 25 === 0 || finished === items.length) console.log(`  ${label} ${finished}/${items.length}`);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return succeeded;
 }
+
+const done = await runPool(plan.updates.slice(0, limit), "шинэчилсэн", async update => {
+  const { imageSourceUrl, ...fields } = update.changes;
+  const imageUrl = withImages && imageSourceUrl ? await rehostImage(imageSourceUrl, update.sku) : undefined;
+  await updateAdminProduct({ id: update.productId, ...fields, ...(imageUrl ? { imageUrl } : {}) });
+}, update => update.sku, "update");
 
 let unsortedId = categories.find(c => c.slug === UNSORTED_CATEGORY.slug)?.id ?? null;
 if (unsortedCount && unsortedId === null) {
@@ -249,9 +268,7 @@ if (unsortedCount && unsortedId === null) {
   unsortedId = created.id;
 }
 
-let createdCount = 0;
-for (const { item, categoryId } of createsWithCategory.slice(0, limit)) {
-  try {
+const createdCount = await runPool(createsWithCategory.slice(0, limit), "үүсгэсэн", async ({ item, categoryId }) => {
     const imageUrl = withImages && item.imageUrls[0] ? await rehostImage(item.imageUrls[0], item.sku) : null;
     await createAdminProduct({
       categoryId: categoryId ?? unsortedId!,
@@ -267,24 +284,13 @@ for (const { item, categoryId } of createsWithCategory.slice(0, limit)) {
       stockQuantity: item.stock,
       isPublished: categoryId !== null,
     });
-    createdCount += 1;
-  } catch (error) {
-    failures.push({ sku: item.sku, step: "create", error: (error as Error).message });
-  }
-  if (createdCount % 25 === 0) console.log(`  үүсгэсэн ${createdCount}/${Math.min(plan.creates.length, limit)}`);
-}
+}, ({ item }) => item.sku, "create");
 
-let hidden = 0;
-if (hideOthers) {
-  for (const p of toHide.slice(0, limit)) {
-    try {
-      await updateAdminProduct({ id: p.productId, isPublished: false });
-      hidden += 1;
-    } catch (error) {
-      failures.push({ sku: p.sku, step: "hide", error: (error as Error).message });
-    }
-  }
-}
+const hidden = hideOthers
+  ? await runPool(toHide.slice(0, limit), "нуусан", async p => {
+    await updateAdminProduct({ id: p.productId, isPublished: false });
+  }, p => p.sku, "hide")
+  : 0;
 
 writeFileSync(join(outDir, "failures.csv"), csv(failures));
 console.log(`\nБИЧСЭН: шинэчилсэн ${done}, үүсгэсэн ${createdCount}, нуусан ${hidden}, алдаа ${failures.length}${failures.length ? ` (${join(outDir, "failures.csv")})` : ""}`);
