@@ -4,6 +4,12 @@
 
 ---
 
+## Ажлын урсгал: production зөвхөн main-ээс, давхар plugin хасав (2026-11-07)
+
+`/grill-me` session-ий шийдвэр (Tom: "бүгд тийм"): production 6bb42de нь `main`-д ороогүй branch-аас deploy хийгдсэн тул хэн нэгэн `main`-ээс deploy хийвэл storefront шинэчлэл чимээгүй буцах эрсдэлтэй байв. **`deploy.ps1`** одоо production-д `git merge-base --is-ancestor HEAD origin/main` шалгаж, `main` дээр байхгүй commit-ийг татгалзана (`-Staging` хамаарахгүй, `-AllowDirty` override). Tom AI Hero-ийн "Skills For Real Engineers"-ийг claude.ai бүртгэлдээ суулгасан тул репогийн `.claude/settings.json`-ийн `enabledPlugins`/`extraKnownMarketplaces`-ийг хасав (skill бүр давхар харагдаж байсан); `docs/agents/` тохиргоо хэвээр. OPERATIONS §2-д дүрэм.
+
+---
+
 ## AI Hero skills — mattpocock/skills plugin (2026-11-07)
 
 Эзэн: *"https://www.aihero.dev/ instal this on this repo"*. AI Hero-ийн суулгах зүйл нь Matt Pocock-ийн **mattpocock/skills** (MIT, 27 skill: `/grill-me`, `/grill-with-docs`, `/tdd`, `/to-spec`, `/to-tickets`, `/triage`, `/code-review`, `/diagnosing-bugs`…). Эзний сонголт: **repo-д идэвхжсэн plugin** (өөрөө шинэчлэгдэнэ, файл хуулахгүй) ба **GitHub Issues** tracker. `.claude/settings.json`-д `enabledPlugins` + `extraKnownMarketplaces` (`anthropics/claude-plugins-official`) — хоёр лаптоп, cloud session бүгд нэг тохиргоо; одоо байсан `permissions`, `includeCoAuthoredBy:false` хэвээр. `/setup-matt-pocock-skills`-ийн гаргадаг тохиргоог гараар бичсэн: `docs/agents/issue-tracker.md` (GitHub), `triage-labels.md` (анхдагч 5 label), `domain.md` (single-context). `## Agent skills` блок **PROJECT-GUIDE.md**-д — `/CLAUDE.md` нь лаптоп бүрийн gitignore-д орсон файл (PROJECT-GUIDE-ийг import хийдэг) тул хуваалцах цор ганц газар. GitHub-ийн 5 label үүсгээгүй (cloud-д `gh` байхгүй) — лаптоп дээр `gh label create`.

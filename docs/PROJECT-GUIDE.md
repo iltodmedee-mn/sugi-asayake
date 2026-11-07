@@ -414,7 +414,7 @@ session-ий тэмдэглэл HISTORY.md-д, дүрэм л энд. Ажилл�
 
 ## Agent skills (mattpocock/skills — AI Hero, 2026-11-07)
 
-`.claude/settings.json`-д repo-д идэвхжсэн plugin (`/grill-me`, `/tdd`, `/to-spec`, `/triage`…). Энэ гарын авлагын дүрэм давамгайлна (монгол commit, AI attribution-гүй, HISTORY.md).
+Tom-ийн claude.ai бүртгэлд суусан plugin "Skills For Real Engineers" (`/grill-me`, `/tdd`, `/to-spec`, `/triage`…) — репод идэвхжүүлдэггүй (давхардна). Энэ гарын авлагын дүрэм давамгайлна (монгол commit, AI attribution-гүй, HISTORY.md).
 
 ### Issue tracker
 

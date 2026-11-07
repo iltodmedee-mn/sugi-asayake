@@ -57,6 +57,13 @@ $dirty = git status --porcelain --untracked-files=no
 if (-not $AllowDirty) {
   if ($behind -gt 0) { throw "This checkout is $behind commit(s) behind origin/main -- pull first (deploying would roll production back). Override: -AllowDirty" }
   if ($dirty) { throw "Uncommitted changes would ship without being in git:`n$dirty`nCommit them first. Override: -AllowDirty" }
+  # 2026-11-07: production 6bb42de-г main-д ороогүй branch-аас deploy хийсэн тул
+  # дараагийн хүн main-ээс deploy хийвэл тэр ажил ЧИМЭЭГҮЙ буцах байв. Production
+  # зөвхөн origin/main дээр байгаа commit-ийг авна; staging дурын branch-аас.
+  if (-not $Staging) {
+    git merge-base --is-ancestor HEAD origin/main
+    if ($LASTEXITCODE -ne 0) { throw "HEAD is not on origin/main -- merge the branch into main first, then deploy production from main (staging: -Staging). Override: -AllowDirty" }
+  }
 }
 $sha = (git rev-parse --short HEAD).Trim()
 Write-Host "deploying $sha"
