@@ -33,6 +33,10 @@ _2026-09-20. Уншигч: системийг ажиллуулж байгаа х
 .\scripts\oci\deploy.ps1 -Staging     # staging
 ```
 
+⛔ **Production зөвхөн `main`-ээс** (2026-11-07): HEAD нь `origin/main` дээр байхгүй бол
+`deploy.ps1` татгалзана — branch-аа эхлээд `main` руу merge хий. Staging (`-Staging`)
+дурын branch-аас болно.
+
 Юу болдог вэ:
 
 1. **Локал компьютер дээр** `pnpm build` ажиллана. Сервер өөрөө build хийдэггүй

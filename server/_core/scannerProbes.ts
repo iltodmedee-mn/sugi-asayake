@@ -72,7 +72,9 @@ const ALLOW_PATTERNS: RegExp[] = [
  * and /node_modules/... are nothing but scanner probes (and /@fs is the path of
  * Vite's arbitrary-file-read CVEs) -- they fall through to PROBE_PATTERNS.
  */
-const DEV_ONLY_ALLOW_PATTERNS: RegExp[] = [/^\/(@vite|@react-refresh|@fs|@id|node_modules|src)\//];
+// `/@react-refresh` нь налуу зураасгүй (@vitejs/plugin-react-ийн runtime) — өмнө нь зөвхөн `…/`-тэйг
+// зөвшөөрдөг байсан тул `pnpm dev` дээр 404 авч, апп огт ачаалагддаггүй байв (2026-10-18).
+const DEV_ONLY_ALLOW_PATTERNS: RegExp[] = [/^\/(@vite|@react-refresh|@fs|@id|node_modules|src)\//, /^\/@react-refresh$/];
 
 export function isScannerProbe(pathname: string): boolean {
   let path: string;

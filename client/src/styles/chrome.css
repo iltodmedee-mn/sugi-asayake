@@ -1,0 +1,12 @@
+/* Толгой, footer, хөвөгч товчнууд (2026-10-18). Гэрээ: storefront.css.
+ * Толгой ба hero-ийн ГЕОМЕТР өөрчлөгдөхгүй — server/_core/heroShell.ts ижил DOM-ыг React-ээс
+ * өмнө зурдаг, e2e/hero-shell.spec.ts rect-ийг тулгана. Энд зөвхөн өнгө/төлөв/жижиг засвар. */
+
+/* Footer: газрын зурагийн холбоосгүй салбар `<span class="footer-plain">` болж зурагддаг тул
+   `.footer-column > span` (баганын ГАРЧИГ — том үсэг, 0.14em зай) загварыг өвлөж "ОРОС
+   ЭЛЧИНГИЙН САЛБАР" мэт эвгүй тасардаг байв. Холбоостой салбартай ижил болгоно. */
+.sugi-site .site-footer .footer-column .footer-plain {
+  margin-bottom: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}

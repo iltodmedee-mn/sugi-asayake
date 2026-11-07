@@ -24,7 +24,7 @@ const REAL = [
   // The cookie banner's own files (client/public/vendor). Blocking these
   // silently killed consent on every page once -- keep them here.
   "/vendor/silktide-consent-manager.js", "/vendor/silktide-consent-manager.css", "/vendor/silktide-consent-init.js",
-  "/@vite/client", "/src/main.tsx", "/node_modules/.vite/deps/react.js",
+  "/@vite/client", "/@react-refresh", "/src/main.tsx", "/node_modules/.vite/deps/react.js",
 ];
 
 describe("isScannerProbe", () => {
@@ -34,7 +34,7 @@ describe("isScannerProbe", () => {
   it("treats the Vite dev-server paths as probes in production (no Vite there; /@fs is the file-read CVE path)", () => {
     vi.stubEnv("NODE_ENV", "production");
     try {
-      for (const path of ["/@fs/C:/Users/x/.env", "/@fs/etc/passwd", "/@vite/client", "/@id/x", "/node_modules/.vite/deps/react.js", "/src/main.tsx"]) {
+      for (const path of ["/@fs/C:/Users/x/.env", "/@fs/etc/passwd", "/@vite/client", "/@react-refresh", "/@id/x", "/node_modules/.vite/deps/react.js", "/src/main.tsx"]) {
         expect(isScannerProbe(path), path).toBe(true);
       }
       expect(isScannerProbe("/shop")).toBe(false);

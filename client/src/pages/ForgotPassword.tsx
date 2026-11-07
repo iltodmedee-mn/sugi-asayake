@@ -10,6 +10,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { trpc } from "@/lib/trpc";
 import { useSiteText } from "@/hooks/useSiteText";
 import { brandName } from "@/lib/brand";
+import PasswordInput from "@/components/uitripled/PasswordInput";
 
 const messageFrom = (error: unknown) => error instanceof Error ? error.message : "Хүсэлт амжилтгүй боллоо. Дахин оролдоно уу.";
 
@@ -68,7 +69,7 @@ export default function ForgotPassword() {
               Шинэ нууц үг
               <div className="auth-field-shell">
                 <Lock size={16} aria-hidden="true" />
-                <input type="password" value={phonePassword} onChange={event => { setPhonePassword(event.target.value); clearError("reset-password"); }} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" {...fieldProps("reset-password")} />
+                <PasswordInput value={phonePassword} onChange={event => { setPhonePassword(event.target.value); clearError("reset-password"); }} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" {...fieldProps("reset-password")} />
               </div>
               <FieldError field="reset-password" message={errorFor("reset-password")} />
             </label>
@@ -76,7 +77,7 @@ export default function ForgotPassword() {
               Шинэ нууц үг давтах
               <div className="auth-field-shell">
                 <Lock size={16} aria-hidden="true" />
-                <input type="password" value={phoneConfirmPassword} onChange={event => { setPhoneConfirmPassword(event.target.value); clearError("reset-confirm"); }} placeholder="Дахин оруулна уу" autoComplete="new-password" {...fieldProps("reset-confirm")} />
+                <PasswordInput value={phoneConfirmPassword} onChange={event => { setPhoneConfirmPassword(event.target.value); clearError("reset-confirm"); }} placeholder="Дахин оруулна уу" autoComplete="new-password" {...fieldProps("reset-confirm")} />
               </div>
               <FieldError field="reset-confirm" message={errorFor("reset-confirm")} />
             </label>

@@ -1,0 +1,118 @@
+/* Сагсны drawer (2026-10-18) — components/CartDrawer.tsx. Radix портал нь .sugi-site-ээс гадна
+ * зурагддаг тул `.sf-portal`; харанхуй горимд index.css-ийн `[data-slot="sheet-content"]`
+ * дүрэм токенуудыг дахин зааж өгдөг. Гэрээ: storefront.css. */
+
+.sf-portal.sf-cart { gap: 0; background: var(--ck-surface); color: var(--ck-ink); }
+
+.sf-portal .sf-cart-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 22px 56px 18px 24px;
+  border-bottom: var(--sf-line);
+  text-align: left;
+}
+.sf-portal .sf-cart-head .sf-cart-title { margin: 0; color: var(--ck-ink); font-size: var(--sf-step-xl); font-weight: 700; letter-spacing: 0; }
+.sf-portal .sf-cart-head .sf-cart-count { color: var(--ck-muted); font-size: var(--sf-step-sm); font-weight: 700; }
+.sf-portal .sf-cart-head .sf-cart-description { grid-column: 1 / -1; margin: 0; color: var(--ck-muted); font-size: var(--sf-step-xs); }
+
+.sf-portal .sf-cart-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding: 4px 24px 20px; overscroll-behavior: contain; }
+.sf-portal .sf-cart-loading { display: grid; min-height: 16rem; place-items: center; color: var(--ck-muted); }
+.sf-portal .sf-cart-list { margin: 0; padding: 0; list-style: none; }
+.sf-portal .sf-cart-list .sf-cart-row {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: var(--sf-line);
+}
+.sf-portal .sf-cart-row .sf-cart-thumb {
+  position: relative;
+  display: block;
+  width: 80px;
+  height: 80px;
+  overflow: hidden;
+  border: var(--sf-line);
+  border-radius: var(--sf-radius);
+  /* Packshot-ийн өөрийн цагаан дэвсгэр. */
+  background: white;
+}
+.sf-portal .sf-cart-row .sf-cart-thumb img { width: 100%; height: 100%; padding: 6%; object-fit: contain; }
+.sf-portal .sf-cart-row .sf-cart-info { min-width: 0; }
+.sf-portal .sf-cart-row .sf-cart-name { margin: 0; font-size: var(--sf-step-base); font-weight: 700; line-height: 1.45; }
+.sf-portal .sf-cart-row .sf-cart-name a { color: var(--ck-ink); text-decoration: none; }
+.sf-portal .sf-cart-row .sf-cart-name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sf-portal .sf-cart-row .sf-cart-subtitle,
+.sf-portal .sf-cart-row .sf-cart-variant { margin: 2px 0 0; color: var(--ck-muted); font-size: var(--sf-step-xs); }
+.sf-portal .sf-cart-row .sf-cart-unit { margin: 4px 0 0; color: var(--ck-muted); font-size: var(--sf-step-sm); font-variant-numeric: tabular-nums; }
+.sf-portal .sf-cart-row .sf-cart-controls { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.sf-portal .sf-cart-row .sf-cart-line { color: var(--ck-ink); font-size: var(--sf-step-md); font-variant-numeric: tabular-nums; font-weight: 800; }
+.sf-portal .sf-cart-row .sf-cart-remove {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  align-self: start;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ck-muted);
+  transition: color var(--sf-dur-fast) var(--sf-ease), background var(--sf-dur-fast) var(--sf-ease);
+}
+.sf-portal .sf-cart-row .sf-cart-remove:hover:not(:disabled) { background: var(--ck-chip); color: var(--ck-ink); }
+.sf-portal .sf-cart-row .sf-cart-remove:disabled { opacity: .4; }
+.sf-portal .sf-stepper.sf-stepper--sm button { width: 36px; height: 36px; }
+.sf-portal .sf-stepper.sf-stepper--sm output { min-width: 28px; font-size: var(--sf-step-sm); }
+
+.sf-portal .sf-cart-empty {
+  display: grid;
+  min-height: 16rem;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 28px;
+  border: 1px dashed var(--ck-line);
+  border-radius: var(--sf-radius);
+  color: var(--ck-muted);
+  text-align: center;
+}
+.sf-portal .sf-cart-empty svg { color: var(--ck-ink); }
+.sf-portal .sf-cart-empty p { margin: 0; font-size: var(--sf-step-sm); }
+.sf-portal .sf-cart-empty .sf-cart-empty-title { color: var(--ck-ink); font-size: var(--sf-step-md); font-weight: 700; }
+.sf-portal .sf-cart-empty .button { margin-top: 8px; }
+
+.sf-portal .sf-cart-foot {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 18px 24px calc(18px + var(--safe-bottom, 0px));
+  border-top: var(--sf-line);
+  background: var(--ck-cream);
+}
+.sf-portal .sf-cart-free { display: grid; gap: 8px; }
+.sf-portal .sf-cart-free p { margin: 0; color: var(--ck-ink); font-size: var(--sf-step-sm); font-weight: 700; }
+.sf-portal .sf-cart-total { display: flex; align-items: baseline; justify-content: space-between; }
+.sf-portal .sf-cart-total span { color: var(--ck-muted); font-size: var(--sf-step-sm); font-weight: 700; }
+.sf-portal .sf-cart-total strong { color: var(--ck-ink); font-size: var(--sf-step-xl); font-variant-numeric: tabular-nums; font-weight: 800; }
+.sf-portal .sf-cart-foot .sf-cart-checkout { width: 100%; min-height: 52px; }
+.sf-portal .sf-cart-note { margin: 0; color: var(--ck-muted); font-size: var(--sf-step-xs); line-height: 1.55; text-align: center; }
+
+/* --- ProgressBar (uitripled/ProgressBar.tsx) — UI TripleD animated-progress-ийн CSS port --- */
+.sugi-site .sf-progress,
+.sf-portal .sf-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--sf-radius-pill);
+  background: var(--ck-chip);
+}
+.sugi-site .sf-progress .sf-progress-fill,
+.sf-portal .sf-progress .sf-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ck-ink);
+  transform-origin: left center;
+  transition: transform var(--sf-dur-slow) var(--sf-ease);
+}

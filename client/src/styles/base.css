@@ -1,0 +1,37 @@
+/* Storefront шинэчлэлийн суурь alias-ууд ба фокусын цагираг (2026-10-18). Гэрээ: storefront.css. */
+
+.sugi-site,
+.sf-portal {
+  /* Cosme Kitchen-ийн 4px булан хэвээр (эзний шийдвэр 2026-10-18: өнгө, фонт, хэлбэрийн
+     токенууд өөрчлөгдөхгүй; найруулга, хөдөлгөөн, төлөвүүд л шинэчлэгдэнэ). */
+  --sf-radius: 4px;
+  --sf-radius-pill: 999px;
+  --sf-ease: var(--ease-out);
+  --sf-dur-fast: 140ms;
+  --sf-dur: 220ms;
+  --sf-dur-slow: 360ms;
+  /* Нарийн шугам — Cosme Kitchen-ийн hairline гадаргуу. */
+  --sf-line: 1px solid var(--ck-line);
+  /* Өргөгдсөн төлөв (hover, sticky, popover) — тайван үед сүүдэргүй. */
+  --sf-raise: var(--shadow-md);
+  /* Үнэ, гарчгийн жижиг шатлал (px — index.css-ийн бусад хэмжээтэй нийцүүлэв). */
+  --sf-step-xs: 12px;
+  --sf-step-sm: 13px;
+  --sf-step-base: 15px;
+  --sf-step-md: 17px;
+  --sf-step-lg: 21px;
+  --sf-step-xl: 26px;
+}
+
+/* Гарын товчлуурын фокус (WCAG 2.4.7/2.4.11). Хуучин дүрэм (index.css:263) нь хагас
+   тунгалаг цэнхэр 3px — цайвар Linen дээр ~2:1, харанхуйд бараг харагдахгүй байв.
+   `--ck-ink` нь харанхуй горимд цайвар руу солигддог тул хоёр горимд ≥3:1.
+   `:where()` — specificity (0,2,0) хэвээр: index.css-ийн (0,2,0) фокусын дүрмүүдийг
+   (`.fbrand-arrow`, `.back-to-top` …) эх кодын дарааллаар нэг загварт оруулна, харин
+   илүү нарийн дүрэм (жишээ нь `.stock-toggle input:focus-visible + span`) өөрөөрөө үлдэнэ.
+   /face-approve (.sugi-site дотор) өөрийн загвартай тул хамаарахгүй. */
+.sugi-site :where(a[href], button, summary, [role="button"], [role="tab"], [role="radio"], [role="menuitemradio"], input[type="checkbox"], input[type="radio"], [tabindex]:not([tabindex="-1"])):where(:not(.face-approve *)):focus-visible,
+.sf-portal :where(a[href], button, summary, [role="button"], [role="tab"], [role="radio"], [role="menuitemradio"], input[type="checkbox"], input[type="radio"], [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 2px solid var(--ck-ink);
+  outline-offset: 3px;
+}

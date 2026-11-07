@@ -8,7 +8,7 @@ import { Clock3, FlaskConical, Globe2, Scale, X } from "lucide-react";
  * long -- opens as a panel over the lower part of the picture instead of
  * pushing the layout around. Renders nothing when the product has no facts.
  *
- * Sits inside .product-gallery-main, whose click opens the lightbox, so
+ * Sits inside the gallery stage (.sf-gallery-stage), whose click opens the lightbox, so
  * every interaction here stops propagation. The zoom button lives in the
  * bottom-right corner; the pills keep to the left and wrap before it.
  */

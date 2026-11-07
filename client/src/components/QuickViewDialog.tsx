@@ -1,16 +1,20 @@
-import { Eye, LoaderCircle, Minus, Plus, ShoppingBag } from "lucide-react";
+import { ArrowUpRight, Eye, ShoppingBag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import VariantPicker from "@/components/VariantPicker";
+import PriceBlock from "@/components/product/PriceBlock";
+import QuantityStepper from "@/components/product/QuantityStepper";
+import ResponsivePicture from "@/components/ResponsivePicture";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { notifyAddedToCart } from "@/lib/addedToCartToast";
 import { trpc } from "@/lib/trpc";
 import { useLocale } from "@/hooks/useLocale";
 import { useProductName } from "@/hooks/useProductName";
 import { translateProductText } from "@shared/product-i18n";
 import { getCategoryPlaceholderImage, getSalePercent } from "@shared/catalog-filter";
-import { formatMnt } from "@shared/format";
 import { brandName } from "@/lib/brand";
 
 export type QuickViewProduct = {
@@ -114,23 +118,38 @@ export default function QuickViewDialog({ open, product, onOpenChange, onAdded }
   const description = translateProductText(detail.data?.description ?? display.shortDescription ?? "Японоос албан ёсоор нийлүүлсэн өдөр тутмын арчилгааны сонголт.", locale, display);
   const salePercent = getSalePercent(activePriceMnt, activeCompareAtPriceMnt);
 
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="quick-view-dialog max-h-[calc(100vh-1.5rem)] overflow-y-auto border-0 bg-[#fffdf9] p-0 shadow-[0_28px_100px_rgba(23,24,27,.32)] sm:max-w-3xl" showCloseButton={false}>
-    <div className="quick-view-topline"><span><Eye size={14} /> QUICK VIEW</span><button type="button" onClick={() => onOpenChange(false)} aria-label="Хаах">×</button></div>
-    <div className="quick-view-layout">
-      <div className="quick-view-image"><img src={display.imageUrl ?? getCategoryPlaceholderImage(display.categorySlug)} alt={names.primary} /><span>{available > 0 ? `${available} ширхэг үлдсэн` : "Нөөц дууссан"}</span></div>
-      <div className="quick-view-copy">
-        <DialogTitle className="font-[var(--font-display)] text-4xl font-semibold tracking-[-.075em] text-[#17181b] sm:text-5xl">{names.primary}</DialogTitle>
-        {names.secondary ? <p className="product-name-secondary">{names.secondary}</p> : null}
-        <DialogDescription className="mt-2 text-[10px] font-extrabold tracking-[.15em] text-[var(--primary)]">{display.brand ?? display.categoryName ?? brandName()}</DialogDescription>
-        <p className="quick-view-description">{detail.isLoading ? "Дэлгэрэнгүй мэдээллийг ачаалж байна…" : description}</p>
-        <div className="quick-view-price"><strong>{formatMnt(activePriceMnt)}</strong>{salePercent ? <><s>{formatMnt(activeCompareAtPriceMnt!)}</s><em className="quick-view-sale-badge">-{salePercent}%</em></> : <span>НӨАТ багтсан</span>}</div>
-        {hasVariantChoice ? <VariantPicker variants={variants} selectedId={selectedVariantId} onSelect={setSelectedVariantId} className="mb-5" /> : null}
-        <div className="quick-view-actions">
-          <div className="quick-view-quantity" aria-label="Тоо сонгох"><button type="button" onClick={() => setQuantity(value => Math.max(1, value - 1))} aria-label="Тоо хасах"><Minus size={15} /></button><span>{quantity}</span><button type="button" disabled={quantity >= available} onClick={() => setQuantity(value => Math.min(available, value + 1))} aria-label="Тоо нэмэх"><Plus size={15} /></button></div>
-          <button type="button" disabled={available === 0 || quantity > available || addItem.isPending} onClick={addToCart} className="quick-view-add">{addItem.isPending ? <LoaderCircle className="animate-spin" size={17} /> : <ShoppingBag size={17} />} {available === 0 ? "Нөөц дууссан" : "Сагсанд нэмэх"}</button>
-        </div>
-        <Link href={`/product/${display.slug}`} onClick={() => onOpenChange(false)} className="quick-view-detail-link">Бүтэн мэдээлэл харах <span>↗</span></Link>
+  const stockLabel = available > 0 ? `${available} ширхэг үлдсэн` : "Нөөц дууссан";
+  // 2026-10-18: `sf-portal` (Radix портал .sugi-site-ээс гадна), ResponsivePicture, хуваалцсан
+  // PriceBlock/Badge/QuantityStepper; утсанд доороос гарч ирэх хуудас (UI TripleD bottom-modal-ийн
+  // хэв маяг, CSS-ээр — styles/routes/shop.css). Хүртээмжийн нэр, нөөцийн хязгаар хэвээр.
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="sf-portal sf-quick p-0 sm:max-w-3xl" showCloseButton={false}>
+      <div className="sf-quick-topline">
+        <span><Eye size={14} aria-hidden="true" /> QUICK VIEW</span>
+        <button type="button" onClick={() => onOpenChange(false)} aria-label="Хаах"><X size={18} aria-hidden="true" /></button>
       </div>
-    </div>
-  </DialogContent></Dialog>;
+      <div className="sf-quick-layout">
+        <div className="sf-quick-media">
+          <ResponsivePicture src={display.imageUrl ?? getCategoryPlaceholderImage(display.categorySlug)} fullWidth={1600} sizes="(max-width: 760px) 90vw, 340px" alt={names.primary} />
+          <Badge tone={available > 0 ? "neutral" : "out"} className="sf-quick-stock">{stockLabel}</Badge>
+        </div>
+        <div className="sf-quick-copy">
+          <DialogDescription className="sf-quick-brand">{display.brand ?? display.categoryName ?? brandName()}</DialogDescription>
+          <DialogTitle className="sf-quick-title">{names.primary}</DialogTitle>
+          {names.secondary ? <p className="sf-quick-subtitle">{names.secondary}</p> : null}
+          <p className="sf-quick-description">{detail.isLoading ? "Дэлгэрэнгүй мэдээллийг ачаалж байна…" : description}</p>
+          <div className="sf-quick-price">
+            <PriceBlock priceMnt={activePriceMnt} compareAtMnt={salePercent ? activeCompareAtPriceMnt ?? null : null} />
+            {salePercent ? <Badge tone="sale">-{salePercent}<i>%</i></Badge> : <span className="sf-quick-tax">НӨАТ багтсан</span>}
+          </div>
+          {hasVariantChoice ? <VariantPicker variants={variants} selectedId={selectedVariantId} onSelect={setSelectedVariantId} className="mb-5" /> : null}
+          <div className="sf-quick-actions">
+            <QuantityStepper value={quantity} onChange={value => setQuantity(Math.min(Math.max(1, available), value))} canIncrease={quantity < available} />
+            <Button className="sf-quick-add" loading={addItem.isPending} disabled={available === 0 || quantity > available} onClick={addToCart}>{addItem.isPending ? null : <ShoppingBag size={17} aria-hidden="true" />}{available === 0 ? "Нөөц дууссан" : "Сагсанд нэмэх"}</Button>
+          </div>
+          <Link href={`/product/${display.slug}`} onClick={() => onOpenChange(false)} className="sf-quick-detail">Бүтэн мэдээлэл харах <ArrowUpRight size={15} aria-hidden="true" /></Link>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>;
 }

@@ -1,5 +1,5 @@
 import { trackEvent } from "@/lib/analytics";
-import { X, ArrowDownUp, ArrowUpRight, ChevronLeft, ChevronRight, Eye, Grid3x3, Heart, LayoutGrid, MapPin, PackageCheck, Phone, RotateCcw, LoaderCircle, Search, ShoppingCart, SlidersHorizontal, Sparkles, Star, Truck, Wallet } from "lucide-react";
+import { X, ArrowDownUp, ArrowUpRight, Eye, Grid3x3, LayoutGrid, MapPin, PackageCheck, Phone, RotateCcw, Search, SlidersHorizontal, Sparkles, Truck, Wallet } from "lucide-react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { scrollElementToTopNow } from "@/lib/scroll";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
@@ -7,7 +7,11 @@ import { Link, useSearch } from "wouter";
 import CartDrawer from "@/components/CartDrawer";
 import CommerceHeader from "@/components/CommerceHeader";
 import QuickViewDialog, { type QuickViewProduct } from "@/components/QuickViewDialog";
-import RailProductCard from "@/components/RailProductCard";
+import ProductCard from "@/components/product/ProductCard";
+import MotionProvider from "@/components/motion/MotionProvider";
+import ShopPagination from "@/components/uitripled/ShopPagination";
+import { AnimatePresence, m } from "framer-motion";
+import "@/styles/routes/shop.css";
 import RecommendedForYou from "@/components/RecommendedForYou";
 import SiteFooter from "@/components/SiteFooter";
 import { useCategories } from "@/hooks/useCategories";
@@ -18,7 +22,7 @@ import { startLogin } from "@/const";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { notifyAddedToCart } from "@/lib/addedToCartToast";
-import { filterCatalogBrand, filterCatalogPriceRange, filterCatalogProducts, filterCatalogSkinType, getCategoryPlaceholderImage, getSalePercent, LOW_STOCK_THRESHOLD, skinTypeLabels, sortCatalogProducts, type CatalogSortOption, type SkinType } from "@shared/catalog-filter";
+import { filterCatalogBrand, filterCatalogPriceRange, filterCatalogProducts, filterCatalogSkinType, skinTypeLabels, sortCatalogProducts, type CatalogSortOption, type SkinType } from "@shared/catalog-filter";
 import { useDocumentMeta } from "@/lib/useDocumentMeta";
 import { rememberRecentlyViewed, resolveRecentlyViewed } from "@shared/recently-viewed";
 import { UB_DELIVERY_FEE_MNT } from "@shared/const";
@@ -27,7 +31,6 @@ import { useT } from "@/hooks/useLocale";
 import { useStoreSetting } from "@/hooks/useStoreSetting";
 import { useProductName } from "@/hooks/useProductName";
 import { formatMnt } from "@shared/format";
-import ResponsivePicture from "@/components/ResponsivePicture";
 import { brandName } from "@/lib/brand";
 // 2026-09-04 cohesion audit: this used to be a locally hardcoded 4-of-6-category
 // list with its own copy/ordering, independent of (and already drifted from)
@@ -65,7 +68,7 @@ function RecentlyViewed({ products, rememberedCount, onRemember, onQuickView }: 
       </div>
       <p>{textFor("shop-text-recent-note", "Энэ жагсаалт зөвхөн таны энэ төхөөрөмж дээр хадгалагдана. Нэвтрэх мэдээлэл, захиалга, эсвэл хувийн таних мэдээлэл цуглуулахгүй.")}</p>
     </div>
-    {products.length ? <><div className="recently-viewed-grid">{products.map(product => <RailProductCard product={product} onRemember={onRemember} onQuickView={onQuickView} key={product.id} />)}</div>{unavailableCount ? <p className="recently-viewed-notice">{`Таны өмнө үзсэн ${unavailableCount} бүтээгдэхүүн одоогоор онлайн каталогоос хасагдсан байна.`}</p> : null}</> : <div className="recently-viewed-empty"><Eye size={19} /><p>{rememberedCount ? `Таны өмнө үзсэн ${rememberedCount} бүтээгдэхүүн одоогоор онлайн каталогоос хасагдсан байна. Шинэ сонголт нэмэгдэхэд энд дахин гарна.` : "Таны үзсэн бүтээгдэхүүн энд гарна. Бодит каталог нийтлэгдсэний дараа бүтээгдэхүүний картнаас “Шуурхай харах” эсвэл дэлгэрэнгүй хуудас нээгээрэй."}</p></div>}
+    {products.length ? <><div className="recently-viewed-grid">{products.map(product => <ProductCard variant="compact" imageSizes="104px" product={product} onNavigate={onRemember} onQuickView={onQuickView} key={product.id} />)}</div>{unavailableCount ? <p className="recently-viewed-notice">{`Таны өмнө үзсэн ${unavailableCount} бүтээгдэхүүн одоогоор онлайн каталогоос хасагдсан байна.`}</p> : null}</> : <div className="recently-viewed-empty"><Eye size={19} /><p>{rememberedCount ? `Таны өмнө үзсэн ${rememberedCount} бүтээгдэхүүн одоогоор онлайн каталогоос хасагдсан байна. Шинэ сонголт нэмэгдэхэд энд дахин гарна.` : "Таны үзсэн бүтээгдэхүүн энд гарна. Бодит каталог нийтлэгдсэний дараа бүтээгдэхүүний картнаас “Шуурхай харах” эсвэл дэлгэрэнгүй хуудас нээгээрэй."}</p></div>}
   </section>;
 }
 
@@ -410,7 +413,7 @@ export default function Shop() {
   });
   const openQuickView = (product: QuickViewProduct) => { rememberProduct(product.id); setQuickViewProduct(product); };
 
-  return <div className="sugi-commerce">
+  return <MotionProvider><div className="sugi-commerce">
     {/* Tom, 2026-09-05 (explicit, /shop only): the logo already reads "SUGI
         ASAYAKE" -- backLabel="" (not omitted -- omitting it would fall back
         to CommerceHeader's own "SUGI ASAYAKE" default) suppresses the
@@ -449,11 +452,15 @@ export default function Shop() {
         {appliedFilters.length > 0 && (
           <div className="shop-applied" role="status" aria-live="polite">
             <span className="shop-applied-label">{t("Сонгосон:")}</span>
-            {appliedFilters.map(chip => (
-              <button type="button" key={chip.key} className="shop-applied-chip" onClick={chip.clear} aria-label={`${chip.label} шүүлтүүрийг хасах`}>
-                {chip.label} <X size={14} aria-hidden="true" />
-              </button>
-            ))}
+            {/* 2026-10-18: чип орох/гарах хөдөлгөөн (UI TripleD-ийн хэв маяг, LazyMotion). `initial={false}` —
+                хуудас ачаалахад URL-аас сэргэсэн чипүүд шууд харагдана (feature chunk хүлээхгүй). */}
+            <AnimatePresence initial={false}>
+              {appliedFilters.map(chip => (
+                <m.button type="button" key={chip.key} className="shop-applied-chip" onClick={chip.clear} aria-label={`${chip.label} шүүлтүүрийг хасах`} initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: .9 }} transition={{ duration: .16 }}>
+                  {chip.label} <X size={14} aria-hidden="true" />
+                </m.button>
+              ))}
+            </AnimatePresence>
             <button type="button" className="shop-applied-clear" onClick={resetControls}>{t("Бүгдийг цэвэрлэх")}</button>
           </div>
         )}
@@ -462,61 +469,23 @@ export default function Shop() {
         <div className="shop-discovery-heading"><p className="shop-kicker"><span /> {textFor("shop-text-discovery-kicker", `${brandName()} / DISCOVER`)}</p><h2>{discoveryLine1}<br /><em>{discoveryLine2}</em></h2><p>{textFor("shop-text-discovery-description", "Онлайн каталогийг бид салбарын бодит нөөцтэй нь уялдуулан шинэчилж байна. Харин та өөрт ойр салбараас дараах ангиллаар шууд асууж болно.")}</p></div>
         <div className="shop-category-deck">{discoveryCategories.map(item => <div className={`shop-category-card ${item.tone}`} key={item.slug}><span><item.Icon size={18} /></span><div><small>{textFor("shop-text-category-kicker", `${brandName().split(" ")[0]} DAILY CARE`)}</small><h3>{item.name}</h3><p>{item.detail}</p></div><ArrowUpRight size={20} /></div>)}</div>
         <div className="shop-discovery-cta" id="shop-contact"><div><MapPin size={20} /><span><strong>{textFor("shop-text-contact-cta-title", "{N} салбар, нэг өдөр тутмын сонголт.").replace("{N}", String(branchCount))}</strong><small>{textFor("shop-text-contact-cta-subtitle", "Таны хайж буй бүтээгдэхүүнийг ойр салбараас асуугаарай.")}</small></span></div><div><Link href="/#stores">Салбар олох <ArrowUpRight size={16} /></Link><a href={`tel:${contact.phoneHref}`}>{contact.phone} <Phone size={15} /></a></div></div>
-      </section> : resultCount ? <><div className="shop-grid-toolbar"><button type="button" className={density === "comfortable" ? "active" : ""} onClick={() => setDensity("comfortable")} aria-pressed={density === "comfortable"} aria-label="Том grid харагдац"><LayoutGrid size={15} /></button><button type="button" className={density === "compact" ? "active" : ""} onClick={() => setDensity("compact")} aria-pressed={density === "compact"} aria-label="Жижиг grid харагдац"><Grid3x3 size={15} /></button></div><section className={`shop-product-grid${density === "compact" ? " is-compact" : ""}`} id="shop-product-grid">{pagedProducts.map((product, index) => {
-        const salePercent = getSalePercent(product.priceMnt, product.compareAtPriceMnt);
-        // 2026-09-27: бэлгийн карт мөр нөөц хөндөхгүй (PROJECT-GUIDE) --
-        // storefront дээр ч үргэлж худалдаж авах боломжтой байх ёстой.
-        const isGiftCard = product.kind === "gift_card";
-        const lowStock = !isGiftCard && product.stockQuantity > 0 && product.stockQuantity <= LOW_STOCK_THRESHOLD;
-        // Frontend performance audit (2026-09-02): grid cards render at
-        // ~180-330 CSS px, but the stored photo is up to 1600px
-        // (IMAGE_MAX_DIMENSION.product) -- the single heaviest thing a
-        // 24-card /shop page sends. null for images uploaded before the
-        // derivative pipeline, so those keep a plain single-source <img>
-        // (see shared/image-variants.ts).
-        // (2026-09-21: srcset/AVIF-ийг ResponsivePicture өөрөө угсарна.)
-        const brandLabel = product.brand?.trim() || product.categoryName || `${brandName()}`;
-        const outOfStock = !isGiftCard && product.stockQuantity <= 0;
-        const addingThis = addToCart.isPending && addToCart.variables?.productId === product.id;
-        return <article key={product.id} className="shop-product-card" data-reveal style={{ transitionDelay: `${Math.min(index * 55, 300)}ms` }}>
-        <div className="shop-product-media">
-          {/* Every value on this card is a product column an admin edits at
-              /admin -> Бүтээгдэхүүн: the brand chip is products.brand, the
-              badge and struck price come from хуучин үнэ (compareAtPriceMnt)
-              against Үнэ, the photo is imageUrl and the button's disabled
-              state is stockQuantity. No copy is hardcoded here. */}
-          <span className="shop-brand-chip">{brandLabel}</span>
-          {salePercent ? <span className="shop-sale-badge">-{salePercent}<i>%</i></span> : null}
-          <Link href={`/product/${product.slug}`} onClick={() => rememberProduct(product.id)} className="shop-product-link" tabIndex={-1} aria-hidden="true"><ResponsivePicture src={product.imageUrl ?? getCategoryPlaceholderImage(product.categorySlug)} fullWidth={1600} sizes={SHOP_CARD_SIZES} alt="" loading="lazy" /></Link>
-          {/* 2026-09-23: харагдах гарчигтай ИЖИЛ нэр (PROJECT-GUIDE: storefront
-              барааны нэрийг зөвхөн `useProductName()`-ээр). Өмнө нь латин
-              `product.name` байсан тул `mn` горимд хүртээмжийн нэр нь
-              харагдах нэрээ агуулахгүй байв (WCAG 2.5.3). */}
-          <button type="button" className={`shop-wishlist-toggle${wishlistIds.has(product.id) ? " active" : ""}`} onClick={() => onToggleWishlist(product.id)} aria-label={wishlistIds.has(product.id) ? `${displayName(product).primary}-г хүслийн жагсаалтаас хасах` : `${displayName(product).primary}-г хүслийн жагсаалтад нэмэх`}><Heart size={15} /></button>
-          {outOfStock ? <span className="shop-stock-flag is-out">{t("Нөөц дууссан")}</span> : lowStock ? <span className="shop-stock-flag">{product.stockQuantity} ширхэг үлдсэн</span> : null}
-          <button type="button" className="shop-quick-view" onClick={() => openQuickView(product)}><Eye size={13} /> Шуурхай</button>
-        </div>
-        <div className="shop-product-copy">
-          <Link href={`/product/${product.slug}`} onClick={() => rememberProduct(product.id)} className="shop-product-link"><h2>{displayName(product).primary}</h2>{displayName(product).secondary ? <span className="product-name-secondary">{displayName(product).secondary}</span> : null}</Link>
-          <span className="shop-product-rating">{product.reviewCount > 0 ? <><Star size={12} fill="#f0b52d" stroke="#f0b52d" /> {product.avgRating?.toFixed(1)} <em>({product.reviewCount})</em></> : null}</span>
-          <div className="shop-product-foot">
-            <div className="shop-product-prices">
-              {/* Empty when there's no хуучин үнэ, but the line still takes
-                  its height so prices align across a row of mixed cards. */}
-              <s>{salePercent ? formatMnt(product.compareAtPriceMnt!) : ""}</s>
-              <strong>{formatMnt(product.priceMnt)}</strong>
-            </div>
-            <button type="button" className="shop-cart-button" disabled={outOfStock || addingThis} onClick={() => addProductToCart(product)} aria-label={outOfStock ? `${displayName(product).primary} — нөөц дууссан` : `${displayName(product).primary}-г сагсанд нэмэх`}>
-              {addingThis ? <LoaderCircle className="animate-spin" size={20} /> : <ShoppingCart size={20} />}
-            </button>
-          </div>
-        </div>
-      </article>;
-      })}</section>{totalPages > 1 ? <nav className="shop-pagination" aria-label="Хуудаслалт">
-        <button type="button" onClick={() => { pagerJump.current = true; setPage(current => Math.max(1, current - 1)); }} disabled={page === 1}><ChevronLeft size={16} /> {t("Өмнөх")}</button>
-        <span>{page} / {totalPages} {t("хуудас")} <em>({resultCount} {t("бүтээгдэхүүн")})</em></span>
-        <button type="button" onClick={() => { pagerJump.current = true; setPage(current => Math.min(totalPages, current + 1)); }} disabled={page === totalPages}>{t("Дараах")} <ChevronRight size={16} /></button>
-      </nav> : null}</> : <section className="shop-status-card" data-reveal><Search size={26} /><h2>Энэ удаа тохирох бүтээгдэхүүн олдсонгүй.</h2><p>Өөр хайлтын үг хэрэглэж үзэх эсвэл бүх ангиллыг дахин хараарай.</p><button type="button" onClick={resetControls}><RotateCcw size={14} /> Шүүлтүүр арилгах</button></section>}
+      </section> : resultCount ? <><div className="shop-grid-toolbar"><button type="button" className={density === "comfortable" ? "active" : ""} onClick={() => setDensity("comfortable")} aria-pressed={density === "comfortable"} aria-label="Том grid харагдац"><LayoutGrid size={15} /></button><button type="button" className={density === "compact" ? "active" : ""} onClick={() => setDensity("compact")} aria-pressed={density === "compact"} aria-label="Жижиг grid харагдац"><Grid3x3 size={15} /></button></div><section className={`shop-product-grid${density === "compact" ? " is-compact" : ""}`} id="shop-product-grid">{pagedProducts.map((product, index) => (
+        // 2026-10-18: Shop-ийн дотоод карт → хуваалцсан ProductCard (grid). Бүх утга нь
+        // /admin → Бүтээгдэхүүн-ий багана (брэнд, хуучин үнэ, зураг, нөөц) — карт өөрөө
+        // нөөц/хямдралыг shared/product-card.ts-ээр шийднэ (бэлгийн карт үргэлж худалдаанд).
+        <ProductCard
+          key={product.id}
+          product={product}
+          variant="grid"
+          headingLevel={2}
+          imageSizes={SHOP_CARD_SIZES}
+          revealDelayMs={Math.min(index * 55, 300)}
+          onNavigate={rememberProduct}
+          onQuickView={openQuickView}
+          wishlist={{ saved: wishlistIds.has(product.id), onToggle: () => onToggleWishlist(product.id) }}
+          cart={{ onAdd: () => addProductToCart(product), pending: addToCart.isPending && addToCart.variables?.productId === product.id }}
+        />
+      ))}</section>{totalPages > 1 ? <ShopPagination page={page} totalPages={totalPages} resultCount={resultCount} onChange={next => { pagerJump.current = true; setPage(Math.min(totalPages, Math.max(1, next))); }} /> : null}</> : <section className="shop-status-card" data-reveal><Search size={26} /><h2>Энэ удаа тохирох бүтээгдэхүүн олдсонгүй.</h2><p>Өөр хайлтын үг хэрэглэж үзэх эсвэл бүх ангиллыг дахин хараарай.</p><button type="button" onClick={resetControls}><RotateCcw size={14} /> Шүүлтүүр арилгах</button></section>}
       {recommended.data?.length ? <RecommendedForYou products={recommended.data} onRemember={rememberProduct} onQuickView={openQuickView} /> : null}
       {/* A premium site doesn't show a "recently viewed" module with nothing
           in it — that reads as an empty placeholder, not a feature. Only
@@ -526,5 +495,5 @@ export default function Shop() {
     <SiteFooter />
     <QuickViewDialog open={Boolean(quickViewProduct)} product={quickViewProduct} onOpenChange={open => { if (!open) setQuickViewProduct(null); }} onAdded={() => setCartOpen(true)} />
     <CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
-  </div>;
+  </div></MotionProvider>;
 }

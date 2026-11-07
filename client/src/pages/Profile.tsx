@@ -27,7 +27,11 @@ import CommerceHeader from "@/components/CommerceHeader";
 import PhoneVerificationStep from "@/components/PhoneVerificationStep";
 import ProfileQuizWizard from "@/components/ProfileQuizWizard";
 import SiteFooter from "@/components/SiteFooter";
-import { LineSkeleton, Skeleton } from "@/components/Skeleton";
+import { LineSkeleton, ProductCardSkeleton, Skeleton } from "@/components/Skeleton";
+import ProductCard from "@/components/product/ProductCard";
+import ProgressBar from "@/components/uitripled/ProgressBar";
+import { Button } from "@/components/ui/button";
+import { useProductName } from "@/hooks/useProductName";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { startLogin } from "@/const";
 import { notifyAddedToCart } from "@/lib/addedToCartToast";
@@ -37,6 +41,7 @@ import type { RouterOutputs } from "@/lib/trpc";
 import { formatMnt } from "@shared/format";
 import { brandName } from "@/lib/brand";
 import { useStoreSetting } from "@/hooks/useStoreSetting";
+import PasswordInput from "@/components/uitripled/PasswordInput";
 
 const messageFrom = (error: unknown) => error instanceof Error ? error.message : "Гүйцэтгэж чадсангүй. Дахин оролдоно уу.";
 
@@ -209,7 +214,7 @@ export default function Profile() {
       <div className="account-shell">
         <nav className="account-sidebar" aria-label="Профайлын цэс">
           {NAV_ITEMS.map(item => (
-            <button key={item.key} type="button" className={`account-nav-item${tab === item.key ? " active" : ""}`} onClick={() => goToTab(item.key)}>
+            <button key={item.key} type="button" className={`account-nav-item${tab === item.key ? " active" : ""}`} aria-current={tab === item.key ? "page" : undefined} onClick={() => goToTab(item.key)}>
               <item.icon size={16} aria-hidden="true" /> {item.label}
             </button>
           ))}
@@ -637,7 +642,7 @@ function PreferencesTab() {
               >
                 <label className="auth-field" htmlFor="phone-change-password">
                   Одоогийн нууц үг
-                  <div className="auth-field-shell"><input type="password" value={phonePassword} onChange={event => { setPhonePassword(event.target.value); phoneErrors.clearError("phone-change-password"); }} autoComplete="current-password" maxLength={200} {...phoneErrors.fieldProps("phone-change-password")} /></div>
+                  <div className="auth-field-shell"><PasswordInput value={phonePassword} onChange={event => { setPhonePassword(event.target.value); phoneErrors.clearError("phone-change-password"); }} autoComplete="current-password" maxLength={200} {...phoneErrors.fieldProps("phone-change-password")} /></div>
                   <FieldError field="phone-change-password" message={phoneErrors.errorFor("phone-change-password")} />
                 </label>
                 <div><button type="submit" className="button button-primary">Үргэлжлүүлэх</button></div>
@@ -691,10 +696,9 @@ function PreferencesTab() {
 /* Wishlist                                                                */
 /* ---------------------------------------------------------------------- */
 
-const fallbackImage = "/product-placeholder.svg";
-
 function WishlistTab({ onCartOpen }: { onCartOpen: () => void }) {
   const utils = trpc.useUtils();
+  const displayName = useProductName();
   const wishlist = trpc.profile.wishlist.list.useQuery();
   const toggle = trpc.profile.wishlist.toggle.useMutation({ onSuccess: () => utils.profile.wishlist.list.invalidate() });
   const addItem = trpc.cart.addItem.useMutation({
@@ -707,40 +711,30 @@ function WishlistTab({ onCartOpen }: { onCartOpen: () => void }) {
       <div className="profile-section-head"><div><h2>Хүслийн жагсаалт</h2><p>Таны хадгалсан бүтээгдэхүүнүүд</p></div></div>
       {wishlist.isLoading ? (
         <div className="wishlist-grid" aria-busy="true">
-          {[0, 1, 2].map(index => (
-            <article className="wishlist-card" key={index}>
-              <div className="wishlist-card-image"><Skeleton style={{ position: "absolute", inset: 0, borderRadius: 0 }} /></div>
-              <div className="wishlist-card-body"><LineSkeleton width="50%" height="9px" /><LineSkeleton width="85%" height="14px" style={{ marginTop: "8px" }} /><LineSkeleton width="35%" height="16px" style={{ marginTop: "8px" }} /></div>
-            </article>
-          ))}
+          {[0, 1, 2].map(index => <ProductCardSkeleton key={index} />)}
         </div>
       ) : wishlist.data?.length ? (
         <div className="wishlist-grid">
+          {/* 2026-10-18: хуваалцсан ProductCard — өмнө нь латин `item.name`, шууд `<img>`
+              (useProductName / ResponsivePicture дүрмийн зөрчил) байсан. */}
           {wishlist.data.map(item => (
-            <article className="wishlist-card" key={item.id}>
-              <div className="wishlist-card-image">
-                {item.stockQuantity <= 0 && <span className="wishlist-oos-badge">НӨӨЦ ДУУССАН</span>}
-                <button type="button" className="wishlist-remove" aria-label="Хүслийн жагсаалтаас хасах" onClick={() => toggle.mutate({ productId: item.productId, saved: false })}>
-                  <Heart size={15} fill="currentColor" />
-                </button>
-                <Link href={`/product/${item.slug}`}><img src={item.imageUrl ?? fallbackImage} alt={item.name} /></Link>
-              </div>
-              <div className="wishlist-card-body">
-                <p>{brandName()}</p>
-                <Link href={`/product/${item.slug}`} style={{ color: "inherit" }}><h3>{item.name}</h3></Link>
-                <strong>{formatMnt(item.priceMnt)}</strong>
-                {item.stockQuantity > 0 ? (
-                  <button type="button" onClick={() => addItem.mutate({ productId: item.productId, quantity: 1 }, { onSuccess: () => notifyAddedToCart(`${item.name} сагсанд нэмэгдлээ.`) })} className="button button-primary" style={{ marginTop: "10px", width: "100%", minHeight: "38px", fontSize: "10px" }}>
-                    <ShoppingBag size={13} /> Сагслах
-                  </button>
-                ) : (
-                  <label className="wishlist-notify">
-                    <input type="checkbox" checked={item.notifyOnRestock} onChange={event => toggle.mutate({ productId: item.productId, saved: true, notifyOnRestock: event.target.checked })} />
-                    Ирэхээр мэдэгдэх
-                  </label>
-                )}
-              </div>
-            </article>
+            <ProductCard
+              key={item.id}
+              product={{ ...item, id: item.productId }}
+              variant="grid"
+              imageSizes="(max-width: 760px) 46vw, 220px"
+              wishlist={{ saved: true, onToggle: () => toggle.mutate({ productId: item.productId, saved: false }) }}
+              footer={item.kind === "gift_card" || item.stockQuantity > 0 ? (
+                <Button size="sm" className="sf-product-action" loading={addItem.isPending && addItem.variables?.productId === item.productId} onClick={() => addItem.mutate({ productId: item.productId, quantity: 1 }, { onSuccess: () => notifyAddedToCart(`${displayName(item).primary} сагсанд нэмэгдлээ.`) })}>
+                  <ShoppingBag size={14} aria-hidden="true" /> Сагслах
+                </Button>
+              ) : (
+                <label className="sf-product-notify">
+                  <input type="checkbox" checked={item.notifyOnRestock} onChange={event => toggle.mutate({ productId: item.productId, saved: true, notifyOnRestock: event.target.checked })} />
+                  Ирэхээр мэдэгдэх
+                </label>
+              )}
+            />
           ))}
         </div>
       ) : (
@@ -1063,15 +1057,15 @@ function SecurityTab() {
         <form onSubmit={submitPasswordChange} className="profile-form-grid">
           <label className="auth-field" style={{ gridColumn: "1 / -1" }}>
             Одоогийн нууц үг
-            <div className="auth-field-shell"><input type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" /></div>
+            <div className="auth-field-shell"><PasswordInput value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" /></div>
           </label>
           <label className="auth-field">
             Шинэ нууц үг
-            <div className="auth-field-shell"><input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" /></div>
+            <div className="auth-field-shell"><PasswordInput value={newPassword} onChange={event => setNewPassword(event.target.value)} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" /></div>
           </label>
           <label className="auth-field">
             Шинэ нууц үг давтах
-            <div className="auth-field-shell"><input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" /></div>
+            <div className="auth-field-shell"><PasswordInput value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" /></div>
           </label>
           <div style={{ gridColumn: "1 / -1" }}>
             <button type="submit" disabled={changePassword.isPending} className="button button-primary">{changePassword.isPending && <LoaderCircle className="animate-spin" size={15} />} Нууц үг шинэчлэх</button>
@@ -1094,7 +1088,7 @@ function SecurityTab() {
           >
             <label className="auth-field" htmlFor="facebook-password">
               Баталгаажуулахын тулд нууц үгээ оруулна уу
-              <div className="auth-field-shell"><input type="password" value={facebookPassword} onChange={event => { setFacebookPassword(event.target.value); facebookErrors.clearError("facebook-password"); }} autoComplete="current-password" maxLength={200} {...facebookErrors.fieldProps("facebook-password")} /></div>
+              <div className="auth-field-shell"><PasswordInput value={facebookPassword} onChange={event => { setFacebookPassword(event.target.value); facebookErrors.clearError("facebook-password"); }} autoComplete="current-password" maxLength={200} {...facebookErrors.fieldProps("facebook-password")} /></div>
               <FieldError field="facebook-password" message={facebookErrors.errorFor("facebook-password")} />
             </label>
             <div>
@@ -1123,7 +1117,7 @@ function SecurityTab() {
             <form onSubmit={event => { event.preventDefault(); deleteAccount.mutate({ password: deletePassword }); }} style={{ marginTop: "14px", display: "grid", gap: "10px", maxWidth: "320px" }}>
               <label className="auth-field">
                 Баталгаажуулахын тулд нууц үгээ оруулна уу
-                <div className="auth-field-shell"><input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" /></div>
+                <div className="auth-field-shell"><PasswordInput value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" /></div>
               </label>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button type="submit" disabled={deleteAccount.isPending} className="danger-button">{deleteAccount.isPending && <LoaderCircle className="animate-spin" size={14} />} Бүрмөсөн устгах</button>
@@ -1219,7 +1213,7 @@ function LoyaltyTab() {
         <div className="loyalty-progress">
           <div className="loyalty-progress-row"><span>Нийт худалдан авалт</span><strong>{formatMnt(data.totalSpendMnt)}</strong></div>
           {data.nextTier ? <>
-            <div className="loyalty-progress-bar"><div className="loyalty-progress-fill" style={{ width: `${Math.min(100, Math.round((data.totalSpendMnt / data.nextTier.minSpendMnt) * 100))}%` }} /></div>
+            <ProgressBar className="loyalty-progress-bar" ratio={data.totalSpendMnt / data.nextTier.minSpendMnt} label={`"${data.nextTier.name}" шат хүртэлх явц`} />
             <p className="loyalty-progress-note">{`"${data.nextTier.name}" шатанд (-${data.nextTier.discountPercent}%) хүрэхэд ${formatMnt(data.amountToNextTierMnt ?? 0)} дутуу байна.`}</p>
           </> : <p className="loyalty-progress-note">Та хамгийн дээд шатанд хүрсэн байна — баярлалаа!</p>}
           {data.manualAdjustmentMnt > 0 && <p className="loyalty-progress-note">{`Үүнд манай салбарт биечлэн хийсэн ${formatMnt(data.manualAdjustmentMnt)} худалдан авалтын түүх багтсан.`}</p>}

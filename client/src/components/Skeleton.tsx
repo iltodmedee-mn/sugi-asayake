@@ -6,40 +6,21 @@ export function Skeleton({ className = "", style }: { className?: string; style?
   return <div className={`skeleton ${className}`} style={style} aria-hidden="true" />;
 }
 
-/** Mimics .shop-product-card's shape (image + brand line + title + price row). */
+/**
+ * ProductCard-ийн хэлбэр (зураг + брэнд + 2 мөр нэр + үнэ). 2026-10-18: `.shop-product-card`
+ * классыг ЗОРИУД авахгүй — e2e тэр классаар "бараа зурагдсан"-ыг хүлээдэг тул skeleton
+ * дээр шууд давчихдаг байв; мөн байхгүй `.shop-product-image` класс зурагны хайрцгийг
+ * өндөргүй болгодог байсан.
+ */
 export function ProductCardSkeleton() {
   return (
-    <div className="shop-product-card skeleton-card">
-      <div className="shop-product-image"><Skeleton style={{ position: "absolute", inset: 0, borderRadius: 0 }} /></div>
-      <div className="shop-product-copy">
+    <div className="sf-product sf-product--skeleton" aria-hidden="true">
+      <div className="sf-product-media"><Skeleton style={{ position: "absolute", inset: 0, borderRadius: 0 }} /></div>
+      <div className="sf-product-body">
         <Skeleton className="skeleton-line" style={{ width: "40%", height: "9px" }} />
         <Skeleton className="skeleton-line" style={{ width: "85%", height: "15px", marginTop: "10px" }} />
         <Skeleton className="skeleton-line" style={{ width: "60%", height: "11px", marginTop: "6px" }} />
-        <Skeleton className="skeleton-line" style={{ width: "35%", height: "24px", marginTop: "19px" }} />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Mimics .bestseller-card's shape (square image + brand line + 2-line
- * title + price). Design consistency audit (2026-09-02): Home.tsx's
- * bestseller/recommended rails used to render nothing at all while their
- * query was still loading -- `{data.length > 0 && ...}` looks identical to
- * "this content doesn't exist" during a fresh load, even though Shop.tsx/
- * ProductDetail.tsx/Profile.tsx already used this Skeleton.tsx pattern for
- * exactly this. Deliberately separate from ProductCardSkeleton, since
- * .bestseller-card's proportions (rank badge, denser padding) aren't the
- * same as .shop-product-card's.
- */
-export function BestsellerCardSkeleton() {
-  return (
-    <div className="bestseller-card skeleton-card">
-      <Skeleton style={{ aspectRatio: "1", borderRadius: 0 }} />
-      <div>
-        <Skeleton className="skeleton-line" style={{ width: "35%", height: "8px" }} />
-        <Skeleton className="skeleton-line" style={{ width: "85%", height: "14px", marginTop: "8px" }} />
-        <Skeleton className="skeleton-line" style={{ width: "40%", height: "12px", marginTop: "8px" }} />
+        <Skeleton className="skeleton-line" style={{ width: "35%", height: "22px", marginTop: "19px" }} />
       </div>
     </div>
   );

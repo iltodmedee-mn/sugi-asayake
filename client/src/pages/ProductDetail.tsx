@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, ListChecks, LoaderCircle, Minus, Plus, Search, ShieldCheck, ShoppingBag, Sparkles, Star, Truck } from "lucide-react";
+import { ListChecks, LoaderCircle, ShieldCheck, ShoppingBag, Sparkles, Star, Truck } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { useDocumentMeta } from "@/lib/useDocumentMeta";
 import { toast } from "sonner";
@@ -13,7 +13,17 @@ import ProductFacts from "@/components/ProductFacts";
 import { LineSkeleton, Skeleton } from "@/components/Skeleton";
 import VariantPicker from "@/components/VariantPicker";
 import CarouselShelf from "@/components/home/CarouselShelf";
-import ShelfProductCard from "@/components/home/ShelfProductCard";
+import ProductCard from "@/components/product/ProductCard";
+import PriceBlock from "@/components/product/PriceBlock";
+import QuantityStepper from "@/components/product/QuantityStepper";
+import StarRating from "@/components/product/StarRating";
+import MotionProvider from "@/components/motion/MotionProvider";
+import ProductGallery from "@/components/uitripled/ProductGallery";
+import ProductInfoTabs, { type ProductInfoTab } from "@/components/uitripled/ProductInfoTabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { productCardRating } from "@shared/product-card";
+import "@/styles/routes/product.css";
 import SiteFooter from "@/components/SiteFooter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { notifyAddedToCart } from "@/lib/addedToCartToast";
@@ -30,8 +40,6 @@ import { useStoreSetting } from "@/hooks/useStoreSetting";
 import { getCategoryPlaceholderImage, getSalePercent, getStockStatusLabel } from "@shared/catalog-filter";
 import { UB_DELIVERY_FEE_MNT } from "@shared/const";
 import { formatMnt } from "@shared/format";
-import ResponsivePicture from "@/components/ResponsivePicture";
-import { PRODUCT_FULL_WIDTH, PRODUCT_MAIN_IMAGE_SIZES } from "@shared/image-variants";
 import { brandName } from "@/lib/brand";
 
 // A product with no uploaded photos at all falls back to just this one
@@ -39,14 +47,6 @@ import { brandName } from "@/lib/brand";
 const previewGallery = ["/product-placeholder.svg"];
 const messageFrom = (error: unknown) => error instanceof Error ? error.message : "Сагсанд нэмж чадсангүй.";
 const reviewMessageFrom = (error: unknown) => error instanceof Error ? error.message : "Сэтгэгдэл илгээж чадсангүй.";
-
-// PREMIUM-FEATURES.md TIER 2: shared star-rating glyph — used both for the
-// read-only average (product header, review cards) and the interactive
-// 1-5 picker in the review form below.
-function StarRating({ value, size = 14 }: { value: number; size?: number }) {
-  const rounded = Math.round(value);
-  return <span className="inline-flex items-center gap-0.5" aria-label={`${value} од`}>{[1, 2, 3, 4, 5].map(n => <Star key={n} size={size} fill={n <= rounded ? "#f0b52d" : "none"} stroke={n <= rounded ? "#f0b52d" : "#c7c8cc"} />)}</span>;
-}
 
 // PREMIUM-FEATURES.md TIER 4: "Хамт авбал тохирно" / "Routine-оо дуусга" —
 // shown only when this product is actually a step of a published routine.
@@ -91,13 +91,12 @@ function RoutineCrossSell({ productId, onAdded }: { productId: number; onAdded: 
 // Shop/Home's RecommendedForYou (that's per-shopper, this has no concept of
 // "the current user" at all -- works for an anonymous visitor).
 // NEWVISION.md §14 (Phase 2): re-drawn with the same CarouselShelf/
-// ShelfProductCard primitive as Home.tsx's bestseller/recommended/category
+// ProductCard (shelf) primitive as Home.tsx's bestseller/recommended/category
 // rails (Isetan's "pairs well with" reference) instead of this page's own
 // one-off static grid -- a shopper now sees one consistent "shelf" pattern
-// site-wide instead of a 4th bespoke product-card treatment. ShelfProductCard
-// always falls back to the generic /product-placeholder.svg (not the
-// category-specific one this grid used to use) -- deliberate, matching every
-// other CarouselShelf on the site, not a regression.
+// site-wide instead of a 4th bespoke product-card treatment. 2026-10-18: the
+// one shared ProductCard falls back to the category placeholder when the row
+// carries a categorySlug, else the generic /product-placeholder.svg.
 /**
  * "Хамт авдаг" (NEWVISION.md §14, 2026-09-16) — бодит захиалгын түүхээс: энэ
  * барааг авсан хүмүүс ижил захиалгад өөр юу авсан бэ. Доорх RelatedProducts нь
@@ -114,7 +113,7 @@ function BoughtTogether({ productId }: { productId: number }) {
 
   return <div className="mt-10">
     <CarouselShelf eyebrow="ХАМТ АВДАГ" title={<>Ихэвчлэн <em>хамт авдаг</em></>} emptyState={null} cardWidth={200} inset>
-      {products.map(product => <ShelfProductCard product={product} key={product.id} />)}
+      {products.map(product => <ProductCard variant="shelf" imageSizes="200px" product={product} key={product.id} />)}
     </CarouselShelf>
   </div>;
 }
@@ -125,7 +124,7 @@ function RelatedProducts({ productId }: { productId: number }) {
 
   return <div className="mt-10">
     <CarouselShelf eyebrow="ХАМТ ХАРСАН НЬ ТОХИРНО" title={<>Мөн танд <em>таалагдаж магадгүй</em></>} loading={relatedQuery.isLoading} emptyState={null} cardWidth={200} inset>
-      {related.map(product => <ShelfProductCard product={product} key={product.id} />)}
+      {related.map(product => <ProductCard variant="shelf" imageSizes="200px" product={product} key={product.id} />)}
     </CarouselShelf>
   </div>;
 }
@@ -291,7 +290,6 @@ export default function ProductDetail() {
     return <div className="min-h-screen bg-muted text-foreground"><CommerceHeader cartCount={cartCount} onCartOpen={() => setCartOpen(true)} backLabel={`${brandName()} дэлгүүр`} /><main className="mx-auto grid min-h-[62vh] max-w-3xl place-items-center px-4 py-12 sm:px-8"><section className="w-full rounded-[2rem] border border-border bg-white p-8 text-center shadow-[var(--shadow-md)] sm:p-12"><p className="text-[10px] font-extrabold tracking-[.18em] text-[var(--primary-strong)]">CATALOG NOTICE</p><h1 className="mt-4 font-[var(--font-display)] text-4xl font-semibold tracking-[-.07em] sm:text-5xl">Бүтээгдэхүүн олдсонгүй.</h1><p className="mx-auto mt-5 max-w-md text-sm leading-6 text-[#67686c]">Таны хайсан бүтээгдэхүүн одоогоор нийтлэгдээгүй, эсвэл холбоос өөрчлөгдсөн байж болно. Манай каталогоос бусад сонголтыг хараарай.</p><Link href="/shop" className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full bg-[var(--primary)] px-6 text-sm font-bold text-white! transition hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] active:scale-[.97]">Бүтээгдэхүүнүүдийг харах</Link></section></main><SiteFooter /><CartDrawer open={cartOpen} onOpenChange={setCartOpen} /></div>;
   }
   const display = product;
-  const currentImage = gallery[Math.min(activeImage, Math.max(0, gallery.length - 1))] ?? previewGallery[0];
   // PHASE 2 of product variants: once a product has more than one variant,
   // price/stock for the option the shopper has picked take over from the
   // product-level fields (which stay meaningful only for the single-variant
@@ -316,21 +314,87 @@ export default function ProductDetail() {
     else addItem.mutate({ productId: product.id, quantity });
   };
 
-  return <div className="min-h-screen bg-muted text-foreground"><CommerceHeader cartCount={cartCount} onCartOpen={() => setCartOpen(true)} backLabel={`${brandName()} дэлгүүр`} /><main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 sm:py-12"><p className="mb-7 flex flex-wrap items-center gap-1 text-[10px] font-extrabold tracking-[.16em] text-muted-foreground"><Link href="/shop" className="transition hover:text-[var(--primary-strong)]!">ДЭЛГҮҮР</Link><ChevronRight className="size-3" /><Link href={display.categoryName ? `/shop?category=${encodeURIComponent(display.categoryName)}` : "/shop"} className="transition hover:text-[var(--primary-strong)]!">{display.categoryName ?? "АРЬС АРЧИЛГАА"}</Link><ChevronRight className="size-3" /><span>{display.brand ?? brandName()}</span></p><div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:gap-16"><div><div className="product-gallery-main relative aspect-[4/5] overflow-hidden rounded-3xl bg-[#e9f0f2]" onClick={() => setLightboxOpen(true)}><span className="absolute left-0 top-8 z-10 bg-[var(--accent)] px-5 py-2 text-[10px] font-extrabold tracking-[.18em] text-foreground">01 / CARE SELECTION</span><ResponsivePicture src={currentImage} fullWidth={PRODUCT_FULL_WIDTH} sizes={PRODUCT_MAIN_IMAGE_SIZES} alt={display.name} className="h-full w-full object-cover" /><button type="button" className="product-image-zoom-trigger" onClick={event => { event.stopPropagation(); setLightboxOpen(true); }} aria-label="Зургийг томруулж харах"><Search size={17} /></button><ProductFacts netContent={display.netContent} countryOfOrigin={display.countryOfOrigin} shelfLifeMonths={display.shelfLifeMonths} ingredients={display.ingredients} /></div><ImageLightbox images={gallery} index={Math.min(activeImage, Math.max(0, gallery.length - 1))} onIndexChange={setActiveImage} open={lightboxOpen} onOpenChange={setLightboxOpen} alt={display.name} />{gallery.length > 1 ? <div className="mt-4 grid grid-cols-3 gap-3">{gallery.map((image, index) => <button type="button" key={image} onClick={() => setActiveImage(index)} className={`aspect-square overflow-hidden rounded-2xl border-2 transition ${activeImage === index ? "border-[var(--primary)]" : "border-transparent opacity-70 hover:opacity-100"}`} aria-label={`${index + 1} дэх зургийг харах`}><img src={image} alt="" className="h-full w-full object-cover" /></button>)}</div> : null}</div><section className="max-w-xl pt-4 lg:pt-10"><p className="flex items-center gap-3 text-[10px] font-extrabold tracking-[.18em] text-[var(--primary-strong)]"><span className="h-px w-10 bg-[var(--primary)]" />01 / {display.brand ?? brandName()}</p><h1 className="mt-3 font-[var(--font-display)] text-5xl font-semibold tracking-[-.085em] sm:text-6xl">{names.primary}</h1>{names.secondary ? <p className="mt-2 text-sm font-semibold text-muted-foreground">{names.secondary}</p> : null}{display.reviewCount > 0 ? <div className="mt-3 flex items-center gap-2"><StarRating value={display.avgRating ?? 0} /><span className="text-xs font-bold text-[#55565b]">{display.avgRating?.toFixed(1)}</span><span className="text-xs text-muted-foreground">({display.reviewCount} сэтгэгдэл)</span></div> : null}<ProductSectionJumps productId={display.id} reviewCount={display.reviewCount} /><p className="mt-3 text-xs text-muted-foreground">{`Баркод / SKU: ${display.sku}`}</p><p className="mt-6 text-base leading-7 text-[#66676b]"><GlossaryText text={translateProductText(display.description ?? display.shortDescription, locale, display)} /></p><ShareBar title={names.primary} /><div className="my-8 border-y border-border py-6"><div className="flex flex-wrap items-end gap-3"><strong className="font-[var(--font-display)] text-4xl tracking-[-.08em]">{formatMnt(activePriceMnt)}</strong>{salePercent ? <><s className="pb-1 text-lg text-muted-foreground">{formatMnt(activeCompareAtPriceMnt!)}</s><span className="mb-1 rounded-full bg-[var(--primary)] px-2.5 py-1 text-[11px] font-extrabold text-white">-{salePercent}%</span></> : <span className="pb-1 text-xs text-muted-foreground">НӨАТ багтсан</span>}</div>{/* 2026-09-07 (bsb.mn mobile-UX pass): previously rendered nothing at all once stock was healthy -- getStockStatusLabel gives every tier an honest label, "in" deliberately without a number. */}<p className={`mt-3 text-xs font-bold ${stockStatus.tone === "in" ? "text-[#2c7650]" : "text-[var(--primary)]"}`}>{product.kind === "gift_card" ? "Цахим бэлгийн карт — төлбөр баталгаажмагц код шууд ирнэ" : stockStatus.label}</p></div>{hasVariantChoice ? <div className="mb-6"><VariantPicker variants={variants} selectedId={selectedVariantId} onSelect={setSelectedVariantId} /></div> : null}{/* 2026-09-07 (bsb.mn mobile-UX pass): hidden on mobile in favor of the
-    sticky bar below (live-confirmed on bsb.mn: they never show both an
-    inline add-to-cart row AND a sticky one on the same screen) -- desktop/
-    tablet keeps this exact row unchanged. */}
-<div className="hidden items-center gap-4 min-[761px]:flex"><div className="inline-flex items-center rounded-full border border-border bg-white"><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="grid size-11 place-items-center" aria-label="Тоо хасах"><Minus size={16} /></button><span className="grid min-w-10 place-items-center font-bold">{quantity}</span><button type="button" disabled={!canIncreaseQuantity} onClick={() => setQuantity(quantity + 1)} className="grid size-11 place-items-center disabled:opacity-40" aria-label="Тоо нэмэх"><Plus size={16} /></button></div><button type="button" disabled={addItem.isPending || stockExhausted} onClick={addToCart} className="min-h-12 flex-1 rounded-full bg-[var(--primary)] px-6 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[var(--primary-hover)] active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-55">{addItem.isPending ? <LoaderCircle className="mx-auto animate-spin" size={17} /> : stockExhausted ? "Нөөц дууссан" : `Сагсанд нэмэх — ${formatMnt(activePriceMnt * quantity)}`}</button></div><div className="mt-8 grid gap-3 sm:grid-cols-2"><div className="flex gap-3 rounded-2xl bg-white p-4"><Truck className="shrink-0 text-[var(--primary)]" size={19} /><p className="text-xs leading-5"><strong className="block text-foreground">УБ хүргэлт — {formatMnt(deliveryFeeUbMnt)}</strong><span className="text-muted-foreground">24–48 цагийн дотор · Салбараас үнэгүй авах</span></p></div><div className="flex gap-3 rounded-2xl bg-white p-4"><ShieldCheck className="shrink-0 text-[var(--primary)]" size={19} /><p className="text-xs leading-5"><strong className="block text-foreground">Албан ёсны баталгаа</strong><span className="text-muted-foreground">{supplierText("brand-text-supplier", "SUGI Drug Store Japan")}</span></p></div></div></section></div><RoutineCrossSell productId={product.id} onAdded={() => setCartOpen(true)} /><BoughtTogether productId={product.id} /><RelatedProducts productId={product.id} /><ReviewsSection productId={product.id} /><QuestionsSection productId={product.id} /></main>
-{/* 2026-09-07 (bsb.mn mobile-UX pass): mobile-only sticky "quantity + Add to
-    cart" bar, replacing BottomNavBar.tsx here (see that component's own
-    `hidden` check for /product/*) -- live-confirmed on bsb.mn's real product
-    page, this exact control cluster, not the global tab bar, is what's
-    sticky at the bottom on their site too. Reuses the identical
-    quantity/addToCart state and JSX already above (no new state), just
-    rendered a second time for the mobile-only bar. */}
-<div className="mobile-sticky-bar pd-sticky-cart">
-  <div className="inline-flex items-center rounded-full border border-border bg-white"><button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="grid size-11 place-items-center" aria-label="Тоо хасах"><Minus size={16} /></button><span className="grid min-w-10 place-items-center font-bold">{quantity}</span><button type="button" disabled={!canIncreaseQuantity} onClick={() => setQuantity(quantity + 1)} className="grid size-11 place-items-center disabled:opacity-40" aria-label="Тоо нэмэх"><Plus size={16} /></button></div>
-  <button type="button" disabled={addItem.isPending || stockExhausted} onClick={addToCart} className="min-h-12 flex-1 rounded-full bg-[var(--primary)] px-6 text-sm font-bold text-white transition active:scale-[.97] disabled:cursor-not-allowed disabled:opacity-55">{addItem.isPending ? <LoaderCircle className="mx-auto animate-spin" size={17} /> : stockExhausted ? "Нөөц дууссан" : `Сагсанд нэмэх — ${formatMnt(activePriceMnt * quantity)}`}</button>
-</div>
-<SiteFooter /><CartDrawer open={cartOpen} onOpenChange={setCartOpen} /></div>;
+  const rating = productCardRating(display);
+  const activeImageIndex = Math.min(activeImage, Math.max(0, gallery.length - 1));
+  const description = translateProductText(display.description ?? display.shortDescription, locale, display);
+  const facts = [
+    display.netContent ? { label: "Хэмжээ", value: display.netContent } : null,
+    display.countryOfOrigin ? { label: "Гарал үүсэл", value: display.countryOfOrigin } : null,
+    display.shelfLifeMonths ? { label: "Хадгалах хугацаа", value: `${display.shelfLifeMonths} сар` } : null,
+    display.ingredients ? { label: "Найрлага", value: display.ingredients } : null,
+  ].filter((fact): fact is { label: string; value: string } => fact !== null);
+  // 2026-10-18: тайлбар ба бүтээгдэхүүний мэдээлэл (UI TripleD native-tabs) — худалдан авах
+  // хэсгийн доор, ингэснээр үнэ ба "Сагсанд нэмэх" нь эхний дэлгэцэд багтана.
+  const infoTabs = ([
+    description ? { id: "description", label: "Тайлбар", content: <p className="sf-info-text"><GlossaryText text={description} /></p> } : null,
+    facts.length ? { id: "facts", label: "Бүтээгдэхүүний мэдээлэл", content: <dl className="sf-info-facts">{facts.map(fact => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}<div><dt>Баркод / SKU</dt><dd>{display.sku}</dd></div></dl> } : null,
+  ] as Array<ProductInfoTab | null>).filter((tab): tab is ProductInfoTab => tab !== null);
+  const addLabel = stockExhausted ? "Нөөц дууссан" : `Сагсанд нэмэх — ${formatMnt(activePriceMnt * quantity)}`;
+  const categoryHref = display.categoryName ? `/shop?category=${encodeURIComponent(display.categoryName)}` : "/shop";
+
+  return <MotionProvider><div className="sf-pdp-page min-h-screen bg-muted text-foreground">
+    <CommerceHeader cartCount={cartCount} onCartOpen={() => setCartOpen(true)} backLabel={`${brandName()} дэлгүүр`} />
+    <main className="sf-pdp">
+      {/* Замын мөр: "ДЭЛГҮҮР" яг энэ бичвэрээр (e2e shop-navigation), одоогийн хуудас aria-current. */}
+      <nav className="sf-crumbs" aria-label="Замын мөр">
+        <ol>
+          <li><Link href="/shop">ДЭЛГҮҮР</Link></li>
+          <li><Link href={categoryHref}>{display.categoryName ?? "АРЬС АРЧИЛГАА"}</Link></li>
+          <li aria-current="page">{names.primary}</li>
+        </ol>
+      </nav>
+      <div className="sf-pdp-grid">
+        <div className="sf-pdp-media">
+          <ProductGallery images={gallery} index={activeImageIndex} onIndexChange={setActiveImage} onZoom={() => setLightboxOpen(true)} alt={names.primary}>
+            <ProductFacts netContent={display.netContent} countryOfOrigin={display.countryOfOrigin} shelfLifeMonths={display.shelfLifeMonths} ingredients={display.ingredients} />
+          </ProductGallery>
+          <ImageLightbox images={gallery} index={activeImageIndex} onIndexChange={setActiveImage} open={lightboxOpen} onOpenChange={setLightboxOpen} alt={display.name} />
+        </div>
+        <section className="sf-pdp-buy" aria-labelledby="pdp-title">
+          {display.brand ? <Link href={`/shop?brand=${encodeURIComponent(display.brand)}`} className="sf-pdp-brand">{display.brand}</Link> : <span className="sf-pdp-brand">{brandName()}</span>}
+          <h1 id="pdp-title" className="sf-pdp-title">{names.primary}</h1>
+          {names.secondary ? <p className="sf-pdp-subtitle">{names.secondary}</p> : null}
+          <div className="sf-pdp-meta">
+            {rating ? <StarRating average={rating.average} count={rating.count} filled={rating.filled} variant="stars" /> : null}
+            <ProductSectionJumps productId={display.id} reviewCount={display.reviewCount} />
+          </div>
+          {/* Үнэ — `main strong`-ийн ЭХНИЙХ нь (e2e product-variants) тул түүнээс өмнө <strong> бүү нэм. */}
+          <div className="sf-pdp-price">
+            <div className="sf-pdp-price-row">
+              <PriceBlock priceMnt={activePriceMnt} compareAtMnt={salePercent ? activeCompareAtPriceMnt : null} className="sf-price--hero" />
+              {salePercent ? <Badge tone="sale">-{salePercent}<i>%</i></Badge> : <span className="sf-pdp-tax">НӨАТ багтсан</span>}
+            </div>
+            {/* 2026-09-07: эрүүл нөөцөд ч үнэн шошго (getStockStatusLabel), тоогүй. */}
+            <p className={`sf-pdp-stock is-${isGiftCard ? "in" : stockStatus.tone}`}><span aria-hidden="true" />{isGiftCard ? "Цахим бэлгийн карт — төлбөр баталгаажмагц код шууд ирнэ" : stockStatus.label}</p>
+          </div>
+          {hasVariantChoice ? <div className="sf-pdp-variants"><VariantPicker variants={variants} selectedId={selectedVariantId} onSelect={setSelectedVariantId} /></div> : null}
+          {/* 2026-09-07 (bsb.mn mobile-UX pass): утсанд доорх наалттай мөр л — нэг дэлгэцэд хоёр
+              "Сагсанд нэмэх" мөр харуулахгүй. Хоёр мөр ИЖИЛ quantity/addToCart төлөвтэй. */}
+          <div className="sf-pdp-actions">
+            <QuantityStepper value={quantity} onChange={setQuantity} canIncrease={canIncreaseQuantity} />
+            <Button className="sf-pdp-add" loading={addItem.isPending} disabled={stockExhausted} onClick={addToCart}><ShoppingBag size={17} aria-hidden="true" />{addLabel}</Button>
+          </div>
+          <ul className="sf-pdp-assurances">
+            <li><Truck size={19} aria-hidden="true" /><p><strong>УБ хүргэлт — {formatMnt(deliveryFeeUbMnt)}</strong><span>24–48 цагийн дотор · Салбараас үнэгүй авах</span></p></li>
+            <li><ShieldCheck size={19} aria-hidden="true" /><p><strong>Албан ёсны баталгаа</strong><span>{supplierText("brand-text-supplier", "SUGI Drug Store Japan")}</span></p></li>
+          </ul>
+          <p className="sf-pdp-sku">{`Баркод / SKU: ${display.sku}`}</p>
+          <ShareBar title={names.primary} />
+        </section>
+      </div>
+      <ProductInfoTabs items={infoTabs} heading="Бүтээгдэхүүний мэдээлэл" />
+      <RoutineCrossSell productId={product.id} onAdded={() => setCartOpen(true)} />
+      <BoughtTogether productId={product.id} />
+      <RelatedProducts productId={product.id} />
+      <ReviewsSection productId={product.id} />
+      <QuestionsSection productId={product.id} />
+    </main>
+    {/* 2026-09-07 (bsb.mn mobile-UX pass): утсанд л харагдах наалттай "тоо + Сагсанд нэмэх" мөр
+        (BottomNavBar /product/*-д нуугддаг). Дээрх мөртэй ижил төлөв, ижил handler. */}
+    <div className="mobile-sticky-bar pd-sticky-cart sf-pdp-sticky">
+      <QuantityStepper value={quantity} onChange={setQuantity} canIncrease={canIncreaseQuantity} />
+      <Button className="sf-pdp-add" loading={addItem.isPending} disabled={stockExhausted} onClick={addToCart}>{addLabel}</Button>
+    </div>
+    <SiteFooter /><CartDrawer open={cartOpen} onOpenChange={setCartOpen} />
+  </div></MotionProvider>;
 }

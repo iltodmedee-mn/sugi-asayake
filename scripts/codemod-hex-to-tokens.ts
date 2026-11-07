@@ -47,6 +47,15 @@ export function storefrontFiles(): string[] {
   };
   walk(join(ROOT, "client/src/pages"));
   walk(join(ROOT, "client/src/components"));
+  // 2026-10-18: storefront шинэчлэлийн CSS (index.css-ийн дараа ачаалагдана) — мөн брэнд hex-гүй.
+  const walkCss = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walkCss(full);
+      else if (name.endsWith(".css")) out.push(full);
+    }
+  };
+  walkCss(join(ROOT, "client/src/styles"));
   return out;
 }
 

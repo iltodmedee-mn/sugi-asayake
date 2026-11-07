@@ -1,0 +1,236 @@
+/* /product/:slug (2026-10-18) — pages/ProductDetail.tsx-ээс импортлогдоно (lazy).
+ * Гэрээ: styles/storefront.css. Япон эмийн сангийн PDP-ийн дараалал: зураг | брэнд → нэр →
+ * үнэлгээ → үнэ → нөөц → хувилбар → тоо + "Сагсанд нэмэх" → хүргэлт/баталгаа; тайлбар ба
+ * бүтээгдэхүүний мэдээлэл доор табаар. */
+
+.sugi-site .sf-pdp-page { background: var(--ck-page); color: var(--ck-ink); }
+.sugi-site .sf-pdp {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: clamp(18px, 2.4vw, 32px) 0 clamp(56px, 6vw, 96px);
+}
+
+/* --- Замын мөр --- */
+.sugi-site .sf-pdp .sf-crumbs ol {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 0;
+  margin: 0 0 clamp(16px, 2vw, 24px);
+  padding: 0;
+  list-style: none;
+  color: var(--ck-muted);
+  font-size: var(--sf-step-xs);
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+.sugi-site .sf-pdp .sf-crumbs li { display: inline-flex; min-width: 0; align-items: center; }
+.sugi-site .sf-pdp .sf-crumbs li + li::before { content: "/"; margin: 0 10px; color: var(--ck-line); }
+.sugi-site .sf-pdp .sf-crumbs a { color: var(--ck-muted); text-decoration: none; }
+.sugi-site .sf-pdp .sf-crumbs a:hover { color: var(--ck-ink); text-decoration: underline; text-underline-offset: 3px; }
+.sugi-site .sf-pdp .sf-crumbs li[aria-current] { overflow: hidden; max-width: 40ch; color: var(--ck-ink); text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Хоёр багана --- */
+.sugi-site .sf-pdp .sf-pdp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+  align-items: start;
+  gap: clamp(28px, 4.5vw, 64px);
+}
+.sugi-site .sf-pdp .sf-pdp-media { position: sticky; top: 96px; min-width: 0; }
+
+/* --- Галерей (uitripled/ProductGallery.tsx) --- */
+.sugi-site .sf-pdp .sf-gallery-stage {
+  position: relative;
+  aspect-ratio: var(--product-aspect);
+  overflow: hidden;
+  border: var(--sf-line);
+  border-radius: var(--sf-radius);
+  /* Packshot цагаан дэвсгэр дээр зурагдсан — хоёр горимд цагаан (брэнд өнгө биш). */
+  background: white;
+  cursor: zoom-in;
+  touch-action: pan-y;
+}
+.sugi-site .sf-pdp .sf-gallery-slide { position: absolute; inset: 0; }
+.sugi-site .sf-pdp .sf-gallery-slide img { width: 100%; height: 100%; padding: 7%; object-fit: contain; }
+.sugi-site .sf-pdp .sf-gallery-nav,
+.sugi-site .sf-pdp .sf-gallery-zoom {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: var(--sf-line);
+  border-radius: 50%;
+  background: var(--ck-surface);
+  color: var(--ck-ink);
+  transition: opacity var(--sf-dur) var(--sf-ease), border-color var(--sf-dur-fast) var(--sf-ease);
+}
+.sugi-site .sf-pdp .sf-gallery-nav { top: 50%; margin-top: -20px; }
+.sugi-site .sf-pdp .sf-gallery-nav.is-prev { left: 12px; }
+.sugi-site .sf-pdp .sf-gallery-nav.is-next { right: 12px; }
+.sugi-site .sf-pdp .sf-gallery-zoom { right: 12px; bottom: 12px; }
+.sugi-site .sf-pdp .sf-gallery-nav:hover,
+.sugi-site .sf-pdp .sf-gallery-zoom:hover { border-color: var(--ck-ink); }
+@media (hover: hover) and (pointer: fine) {
+  .sugi-site .sf-pdp .sf-gallery-nav { opacity: 0; }
+  .sugi-site .sf-pdp .sf-gallery-stage:hover .sf-gallery-nav,
+  .sugi-site .sf-pdp .sf-gallery-nav:focus-visible { opacity: 1; }
+}
+.sugi-site .sf-pdp .sf-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 76px));
+  gap: 8px;
+  margin-top: 10px;
+}
+.sugi-site .sf-pdp .sf-gallery-thumb {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border: var(--sf-line);
+  border-radius: var(--sf-radius);
+  background: white;
+  opacity: .72;
+  transition: opacity var(--sf-dur-fast) var(--sf-ease), border-color var(--sf-dur-fast) var(--sf-ease);
+}
+.sugi-site .sf-pdp .sf-gallery-thumb img { width: 100%; height: 100%; padding: 8%; object-fit: contain; }
+.sugi-site .sf-pdp .sf-gallery-thumb:hover { opacity: 1; }
+.sugi-site .sf-pdp .sf-gallery-thumb[aria-selected="true"] { border: 2px solid var(--ck-ink); opacity: 1; }
+
+/* --- Худалдан авах хэсэг --- */
+.sugi-site .sf-pdp .sf-pdp-buy { min-width: 0; padding-top: 4px; }
+.sugi-site .sf-pdp .sf-pdp-brand {
+  display: inline-block;
+  color: var(--ck-muted);
+  font-size: var(--sf-step-xs);
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.sugi-site .sf-pdp a.sf-pdp-brand:hover { color: var(--ck-ink); text-decoration: underline; text-underline-offset: 3px; }
+.sugi-site .sf-pdp .sf-pdp-title {
+  margin: 8px 0 0;
+  color: var(--ck-ink);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2.6vw, 34px);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.sugi-site .sf-pdp .sf-pdp-subtitle { margin: 6px 0 0; color: var(--ck-muted); font-size: var(--sf-step-sm); font-weight: 600; }
+.sugi-site .sf-pdp .sf-pdp-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 12px; }
+.sugi-site .sf-pdp .sf-pdp-meta .pdp-jumps { margin-top: 0; }
+
+.sugi-site .sf-pdp .sf-pdp-price { margin: 22px 0 0; padding: 18px 0; border-top: var(--sf-line); border-bottom: var(--sf-line); }
+.sugi-site .sf-pdp .sf-pdp-price-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.sugi-site .sf-pdp .sf-price.sf-price--hero .sf-price-now { font-size: clamp(28px, 3vw, 36px); letter-spacing: -.02em; }
+.sugi-site .sf-pdp .sf-price.sf-price--hero .sf-price-was { font-size: 16px; }
+.sugi-site .sf-pdp .sf-pdp-tax { color: var(--ck-muted); font-size: var(--sf-step-xs); font-weight: 600; }
+.sugi-site .sf-pdp .sf-pdp-stock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--ck-ink);
+  font-size: var(--sf-step-sm);
+  font-weight: 700;
+}
+.sugi-site .sf-pdp .sf-pdp-stock > span { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--sky); }
+.sugi-site .sf-pdp .sf-pdp-stock.is-low > span { background: var(--accent); }
+.sugi-site .sf-pdp .sf-pdp-stock.is-out > span { background: var(--primary); }
+
+.sugi-site .sf-pdp .sf-pdp-variants { margin-top: 18px; }
+.sugi-site .sf-pdp .sf-pdp-actions { display: flex; align-items: stretch; gap: 12px; margin-top: 20px; }
+.sugi-site .sf-pdp-page .sf-pdp-add { flex: 1 1 auto; min-height: 52px; gap: 10px; letter-spacing: .02em; }
+
+.sugi-site .sf-pdp .sf-pdp-assurances {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sugi-site .sf-pdp .sf-pdp-assurances li {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: var(--sf-line);
+  border-radius: var(--sf-radius);
+  background: var(--ck-surface);
+}
+.sugi-site .sf-pdp .sf-pdp-assurances svg { flex: none; color: var(--primary); }
+.sugi-site .sf-pdp .sf-pdp-assurances p { margin: 0; font-size: var(--sf-step-xs); line-height: 1.55; }
+.sugi-site .sf-pdp .sf-pdp-assurances strong { display: block; color: var(--ck-ink); font-size: var(--sf-step-sm); }
+.sugi-site .sf-pdp .sf-pdp-assurances span { color: var(--ck-muted); }
+.sugi-site .sf-pdp .sf-pdp-sku { margin: 16px 0 0; color: var(--ck-muted); font-size: var(--sf-step-xs); }
+
+/* --- Мэдээллийн таб (uitripled/ProductInfoTabs.tsx) --- */
+.sugi-site .sf-pdp .sf-info { margin-top: clamp(40px, 5vw, 64px); }
+.sugi-site .sf-pdp .sf-info .sf-info-heading { margin: 0 0 14px; color: var(--ck-ink); font-size: var(--sf-step-lg); font-weight: 700; }
+.sugi-site .sf-pdp .sf-info .sf-info-list {
+  display: flex;
+  width: 100%;
+  height: auto;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0;
+  overflow-x: auto;
+  border-bottom: var(--sf-line);
+  border-radius: 0;
+  background: transparent;
+  scrollbar-width: none;
+}
+.sugi-site .sf-pdp .sf-info .sf-info-trigger {
+  position: relative;
+  flex: 0 0 auto;
+  height: auto;
+  padding: 12px 16px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ck-muted);
+  font-size: var(--sf-step-base);
+  font-weight: 700;
+}
+.sugi-site .sf-pdp .sf-info .sf-info-trigger::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  background: var(--ck-ink);
+  transform: scaleX(0);
+  transition: transform var(--sf-dur) var(--sf-ease);
+}
+.sugi-site .sf-pdp .sf-info .sf-info-trigger:hover { color: var(--ck-ink); }
+.sugi-site .sf-pdp .sf-info .sf-info-trigger[data-state="active"] { color: var(--ck-ink); }
+.sugi-site .sf-pdp .sf-info .sf-info-trigger[data-state="active"]::after { transform: scaleX(1); }
+.sugi-site .sf-pdp .sf-info .sf-info-body { padding-top: 20px; }
+.sugi-site .sf-pdp .sf-info .sf-info-text { max-width: 72ch; margin: 0; color: var(--ck-ink); font-size: var(--sf-step-base); line-height: 1.85; }
+.sugi-site .sf-pdp .sf-info .sf-info-facts { display: grid; max-width: 72ch; margin: 0; border-top: var(--sf-line); }
+.sugi-site .sf-pdp .sf-info .sf-info-facts > div { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 16px; padding: 12px 0; border-bottom: var(--sf-line); }
+.sugi-site .sf-pdp .sf-info .sf-info-facts dt { color: var(--ck-muted); font-size: var(--sf-step-sm); font-weight: 700; }
+.sugi-site .sf-pdp .sf-info .sf-info-facts dd { margin: 0; color: var(--ck-ink); font-size: var(--sf-step-sm); line-height: 1.7; overflow-wrap: anywhere; }
+
+/* --- Утас --- */
+@media (max-width: 900px) {
+  .sugi-site .sf-pdp .sf-pdp-grid { grid-template-columns: 1fr; }
+  .sugi-site .sf-pdp .sf-pdp-media { position: static; }
+}
+@media (max-width: 760px) {
+  .sugi-site .sf-pdp { width: calc(100% - 32px); }
+  .sugi-site .sf-pdp .sf-crumbs li[aria-current] { display: none; }
+  /* Утсанд наалттай мөр л (bsb.mn) — дотоод мөр давхардахгүй. */
+  .sugi-site .sf-pdp .sf-pdp-actions { display: none; }
+  .sugi-site .sf-pdp .sf-pdp-assurances { grid-template-columns: 1fr; }
+  .sugi-site .sf-pdp .sf-info .sf-info-facts > div { grid-template-columns: 1fr; gap: 4px; }
+  .sugi-site .sf-pdp-page .sf-pdp-sticky { gap: 10px; }
+  .sugi-site .sf-pdp-page .sf-pdp-sticky .sf-pdp-add { min-width: 0; min-height: 46px; padding: 0 12px; overflow: hidden; font-size: 14px; letter-spacing: 0; white-space: nowrap; }
+  .sugi-site .sf-pdp-page .sf-pdp-sticky .sf-stepper button { width: 38px; height: 38px; }
+}

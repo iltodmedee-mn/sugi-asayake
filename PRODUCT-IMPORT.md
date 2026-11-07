@@ -80,3 +80,31 @@ Import хийж байх явцад анхны placeholder бараа "Diane sha
 1. **Барааны бодит нөөц** — placeholder `20`-г бодит үлдэгдлээр admin панелаас (эсвэл дараагийн import batch-аар, хэрэв Tom Excel-ээр өгвөл) солих.
 2. **Зураг нэмэх** — pilot batch-ийн адил websearch+og:image аргаар үе шаттайгаар (жишээ нь өндөр үнэтэй/түгээмэл борлуулагддаг барааг эхэлж) нэмэх, эсвэл Tom өөрийн дэлгүүрийн бодит зургуудыг admin панелаас шууд upload хийх.
 3. Ангиллын алдаа (rule-based учир бага хувь ~2-5% алдаатай байж болзошгүй, жишээ нь "S-Select Cleansing Sodium" гэр ахуйн бодис уу, арьс арчилгааны бодис уу тодорхойгүй) байвал admin панелаас гараар засварлах.
+
+---
+
+## asayake.mn (Zochil) → энэ сайт (2026-11-07)
+
+Tom-ийн шийдвэр (`/grill-me`, "бүгд тийм"): каталогийн эх сурвалж нь **asayake.mn**. Скрипт:
+`scripts/import-asayake-products.ts`, дүрмүүд + тест: `shared/asayake-import.ts`, `server/asayake-import.test.ts`.
+
+| Тохиолдол | Юу хийнэ |
+|---|---|
+| Баркод (`sku`) таарсан | үнэ, хямдрал (`sale_price` → үнэ, `price` → хуучин үнэ), нөөц, зургийг asayake.mn-ээс ДАРНА; тайлбар, монгол нэрийг sugi-д хоосон бол л нөхнө. Нөөц нь онлайн биелүүлэлтийн салбарт (ledger-тэй) |
+| asayake.mn-д л байгаа | шинээр үүснэ, ангиллыг нэрээр (`ASAYAKE_CATEGORY_ALIASES`: Үс арчилгаа→Үс ба бие, Нүүр будалт→Гоо сайхан, Гэр ахуй/Шүд арчилгаа→Эрүүл ахуй, Хүүхдийн бүтээгдэхүүн→Ээж ба хүүхэд) тааруулж НИЙТЭЛНЭ; таараагүй нь нуугдмал "Ангилах шаардлагатай" ангилалд ноорог |
+| sugi-д л байгаа | `--hide-others` үед нийтлэлтээс ХАСНА (устгахгүй — захиалга/нөөцийн түүх хадгалагдана, буцааж нээж болно). Бэлгийн картыг хэзээ ч нуухгүй |
+| Олон хувилбартай бараа | хөндөхгүй, `multi-variant-skipped.csv`-д |
+| Зураг | Zochil CDN-ээс татаж admin upload-тай ижил замаар (WebP + 600px + AVIF) R2 `catalog/products/asayake/<баркод>`-д; аль хэдийн хуулсныг дахин хуулахгүй |
+
+```powershell
+# 1) Dry run — юу ч бичихгүй, backups/asayake-import/<огноо>/-д summary.txt + updates/creates/hide CSV
+pnpm exec tsx scripts/import-asayake-products.ts
+# 2) Staging дээр бичих (DATABASE_URL-ийг .../sugi_staging болгоод)
+pnpm exec tsx scripts/import-asayake-products.ts --apply --hide-others
+# 3) Staging-ийг шалгасны ДАРАА production (defaultdb) — Tom л
+pnpm exec tsx scripts/import-asayake-products.ts --apply --hide-others --i-know-this-is-production
+```
+
+Шалгасан (2026-11-07, локал туршилтын DB): asayake.mn 768/768 бараа (бүгд JAN баркод, зурагтай), шинэ бараа 695-ын 688 нь ангилалтай;
+`--apply --hide-others` → алдаа 0, бүх бараанд хувилбар, салбарын нөөцийн нийлбэр = барааны нөөц (зөрүү 0), дахин ажиллуулахад өөрчлөлт 0;
+`defaultdb`-д `--apply` татгалзана. Бодит sugi-ийн зураггүй 415 барааны 322 нь asayake.mn-д зурагтай. R2 руу бичих алхмыг локалд шалгаагүй (S3 байхгүй) — staging run эхний бодит шалгалт.

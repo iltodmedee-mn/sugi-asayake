@@ -12,6 +12,7 @@ import { useSiteText } from "@/hooks/useSiteText";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { isValidPhoneInput } from "@/lib/clientValidation";
 import { brandName } from "@/lib/brand";
+import PasswordInput from "@/components/uitripled/PasswordInput";
 
 const messageFrom = (error: unknown) => error instanceof Error ? error.message : "Хүсэлт амжилтгүй боллоо. Дахин оролдоно уу.";
 
@@ -158,7 +159,7 @@ export default function Login() {
               Нууц үг
               <div className="auth-field-shell">
                 <Lock size={16} aria-hidden="true" />
-                <input type="password" value={password} onChange={event => { setPassword(event.target.value); clearError("login-password"); }} placeholder="••••••••" autoComplete="current-password" {...fieldProps("login-password")} />
+                <PasswordInput value={password} onChange={event => { setPassword(event.target.value); clearError("login-password"); }} placeholder="••••••••" autoComplete="current-password" {...fieldProps("login-password")} />
               </div>
               <FieldError field="login-password" message={errorFor("login-password")} />
             </label>
@@ -185,7 +186,7 @@ export default function Login() {
               Нууц үг
               <div className="auth-field-shell">
                 <Lock size={16} aria-hidden="true" />
-                <input type="password" value={password} onChange={event => { setPassword(event.target.value); clearError("register-password"); }} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" {...fieldProps("register-password")} />
+                <PasswordInput value={password} onChange={event => { setPassword(event.target.value); clearError("register-password"); }} placeholder="8-с дээш тэмдэгт" autoComplete="new-password" {...fieldProps("register-password")} />
               </div>
               <FieldError field="register-password" message={errorFor("register-password")} />
             </label>

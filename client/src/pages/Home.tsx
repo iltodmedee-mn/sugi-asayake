@@ -35,7 +35,7 @@ import QuickStatsSection from "@/components/home/QuickStatsSection";
 import FeaturedBrandsCarousel from "@/components/home/FeaturedBrandsCarousel";
 import KeywordChips from "@/components/home/KeywordChips";
 import CarouselShelf from "@/components/home/CarouselShelf";
-import ShelfProductCard from "@/components/home/ShelfProductCard";
+import ProductCard from "@/components/product/ProductCard";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useCategories } from "@/hooks/useCategories";
 import { useSiteMedia } from "@/hooks/useSiteMedia";
@@ -60,6 +60,8 @@ import { brandName } from "@/lib/brand";
 const assortmentImage = "/product-placeholder.svg";
 const familyImage = null;
 const symbolImage = "/images/brand/sugi-symbol-256.webp";
+/** Нүүрний rail-ийн картын өргөн (index.css `.sugi-site .shelf-card-slot`: 232 → 200 ≤1023 → 176 ≤760 → 168px ≤420). */
+const SHELF_CARD_SIZES = "(max-width: 420px) 168px, (max-width: 760px) 176px, (max-width: 1023px) 200px, 232px";
 
 export default function Home() {
   const { user } = useAuth();
@@ -177,7 +179,7 @@ export default function Home() {
             curated list. 2026-09-12: the 6-up grid of shadowed cards became
             the reference's own shape -- one horizontal rail of bordered
             cards under a centred heading, each rank set as "No.1" above its
-            card. CarouselShelf/ShelfProductCard are the primitives
+            card. CarouselShelf/ProductCard are the primitives
             ProductDetail already uses, so the site has one product-card
             treatment rather than two. emptyState={null} keeps the existing
             rule: hidden entirely once loaded with zero results. */}
@@ -185,7 +187,7 @@ export default function Home() {
           // Брэнд студи A3: "сүлжээ" хувилбар — бүх их зарагддаг барааг нэг дор (гүйлгэхгүй).
           <section className="carousel-shelf-section bestseller-grid-section" data-reveal>
             <div className="carousel-shelf-heading"><h2>{textFor("home-text-bestseller-heading", "Их зарагддаг\nбараанууд").split("\n").join(" ")}</h2></div>
-            <div className="bestseller-grid">{bestsellers.map((product, index) => <ShelfProductCard product={product} rank={index + 1} key={product.id} />)}</div>
+            <div className="bestseller-grid">{bestsellers.map((product, index) => <ProductCard variant="shelf" imageSizes={SHELF_CARD_SIZES} product={product} rank={index + 1} key={product.id} />)}</div>
           </section>
         ) : (bestsellersQuery.isLoading || bestsellers.length > 0) && (
           <CarouselShelf
@@ -195,7 +197,7 @@ export default function Home() {
             loading={bestsellersQuery.isLoading}
             emptyState={null}
           >
-            {bestsellers.map((product, index) => <ShelfProductCard product={product} rank={index + 1} key={product.id} />)}
+            {bestsellers.map((product, index) => <ProductCard variant="shelf" imageSizes={SHELF_CARD_SIZES} product={product} rank={index + 1} key={product.id} />)}
           </CarouselShelf>
         )}
       </>
@@ -213,7 +215,7 @@ export default function Home() {
             loading={recommendedQuery.isLoading}
             emptyState={null}
           >
-            {recommended.map(product => <ShelfProductCard product={product} key={product.id} />)}
+            {recommended.map(product => <ProductCard variant="shelf" imageSizes={SHELF_CARD_SIZES} product={product} key={product.id} />)}
           </CarouselShelf>
         )}
       </>

@@ -12,6 +12,8 @@ import { captureTrafficSource } from "./lib/trafficSource";
 import { reloadOnceForStaleChunk } from "./lib/lazyRetry";
 import { startInstallWatch } from "./lib/pwaInstall";
 import "./index.css";
+// index.css-ийн ДАРАА (каскадын гэрээ: styles/storefront.css).
+import "./styles/storefront.css";
 
 captureTrafficSource();
 

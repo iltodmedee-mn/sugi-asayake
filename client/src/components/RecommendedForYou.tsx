@@ -1,5 +1,5 @@
 import type { QuickViewProduct } from "@/components/QuickViewDialog";
-import RailProductCard from "@/components/RailProductCard";
+import ProductCard from "@/components/product/ProductCard";
 import { useSiteText } from "@/hooks/useSiteText";
 
 /**
@@ -15,7 +15,7 @@ import { useSiteText } from "@/hooks/useSiteText";
  * never imports this component and reimplements its own bestseller-style
  * card instead (see Home.tsx's BestsellerRailCard). What this component's
  * card markup IS genuinely shared with is Shop.tsx's own RecentlyViewed
- * section, via the extracted RailProductCard below.
+ * section, via the shared ProductCard (compact variant) below.
  */
 export type RecommendedForYouProps = {
   products: QuickViewProduct[];
@@ -36,6 +36,6 @@ export default function RecommendedForYou({ products, onRemember, onQuickView }:
       <p>{textFor("shop-text-recommended-description", "Таны профайл дээр хадгалсан арьс, үс, биеийн төрөл, арчилгааны зорилгод тохирсон бүтээгдэхүүнүүд.")}</p>
     </div>
     {/* v3 (2026-09-20): карт бүр яагаад санал болгосноо хэлнэ — эхний 2 шалтгаан. */}
-    <div className="recently-viewed-grid">{products.map(product => <RailProductCard product={product} onRemember={onRemember} onQuickView={onQuickView} reason={product.reasons?.slice(0, 2).join(" · ") || null} key={product.id} />)}</div>
+    <div className="recently-viewed-grid">{products.map(product => <ProductCard variant="compact" imageSizes="104px" product={product} onNavigate={onRemember} onQuickView={onQuickView} reason={product.reasons?.slice(0, 2).join(" · ") || null} key={product.id} />)}</div>
   </section>;
 }

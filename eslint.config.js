@@ -34,7 +34,19 @@ export default tseslint.config(
     // places in this codebase that work and are tested; adopting them is a
     // refactor to plan, not a lint setting. The two rules that catch real
     // bugs stay on.
-    rules: { "react-hooks/rules-of-hooks": "error", "react-hooks/exhaustive-deps": "warn" },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
+      // 2026-10-18 (storefront шинэчлэл): framer-motion нь зөвхөн LazyMotion + `m.*`-ээр —
+      // `motion.*` ба `domMax` нь бүх feature-ийг эхний chunk-д татна (components/motion/).
+      "no-restricted-imports": ["error", {
+        paths: [
+          { name: "framer-motion", importNames: ["motion", "domMax"], message: "LazyMotion + `m` ашигла (client/src/components/motion/MotionProvider.tsx)." },
+          { name: "motion", message: "framer-motion-ийн `m` ашигла (нэг багц)." },
+          { name: "motion/react", message: "framer-motion-ийн `m` ашигла (нэг багц)." },
+        ],
+      }],
+    },
     languageOptions: { globals: globals.browser },
   },
   {

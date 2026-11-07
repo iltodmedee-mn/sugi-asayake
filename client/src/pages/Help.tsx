@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { useShopContact } from "@/hooks/useShopContact";
 import { useT } from "@/hooks/useLocale";
 import { HELP_FAQ } from "@shared/help-faq";
+import "@/styles/routes/content.css";
 import { brandName } from "@/lib/brand";
 
 /**

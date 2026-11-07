@@ -1,0 +1,31 @@
+/* Мэдээлэл/тусламжийн хуудас (2026-10-18) — pages/Help.tsx-ээс импортлогдоно (lazy).
+ * Гэрээ: styles/storefront.css. FAQ нь UI TripleD faq-section-ийн хэв маягийг CSS-ээр — native
+ * `<details>` хэвээр (JS-гүй ажиллана, хуудсан доторх хайлт хариултыг олно, орчуулга эвдэрхгүй). */
+
+.sugi-site .help-faq .help-faq-item {
+  border-color: var(--ck-line);
+  background: var(--ck-surface);
+  transition: border-color var(--sf-dur) var(--sf-ease);
+}
+.sugi-site .help-faq .help-faq-item:hover,
+.sugi-site .help-faq .help-faq-item[open] { border-color: color-mix(in srgb, var(--ck-ink) 45%, var(--ck-line)); }
+.sugi-site .help-faq .help-faq-item summary { min-height: 52px; color: var(--ck-ink); }
+.sugi-site .help-faq .help-faq-item summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-right: 4px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-3px) rotate(45deg);
+  transition: transform var(--sf-dur) var(--sf-ease);
+}
+.sugi-site .help-faq .help-faq-item[open] summary::after { transform: translateY(2px) rotate(-135deg); }
+.sugi-site .help-faq .help-faq-item p { color: var(--ck-ink); line-height: 1.8; }
+.sugi-site .help-faq .help-faq-item[open] p { animation: sf-faq-in var(--sf-dur-slow) var(--sf-ease); }
+
+@keyframes sf-faq-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
