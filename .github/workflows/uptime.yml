@@ -75,7 +75,10 @@ jobs:
         # (`$(`/backtick агуулсан бие token-той алхамд bash-аар ажиллахгүй).
         env:
           DETAIL: ${{ steps.probe.outputs.detail }}
-          TITLE: ${{ steps.probe.outputs.blocked == '1' && format('{0}: monitor blocked (status unknown)', env.SITE_HOST) || format('{0} is DOWN', env.SITE_HOST) }}
+          # Хашилт ЗААВАЛ: утга доторх "{0}: " нь YAML-д түлхүүр гэж уншигдаж файл бүхэлдээ
+          # хүчингүй болдог байв — 09-24-нөөс 11-07 хүртэл энэ workflow ОГТ ажиллаагүй
+          # (10-01, 11-01-ний DB ослууд мэдэгдэлгүй). server/workflows-guard.test.ts барина.
+          TITLE: "${{ steps.probe.outputs.blocked == '1' && format('{0}: monitor blocked (status unknown)', env.SITE_HOST) || format('{0} is DOWN', env.SITE_HOST) }}"
         run: |
           curl -sS --max-time 20 \
             -H "Authorization: Bearer $NTFY_TOKEN" \
