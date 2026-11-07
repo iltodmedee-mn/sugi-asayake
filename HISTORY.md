@@ -4,6 +4,12 @@
 
 ---
 
+## 🔴 Production DB унав: HeatWave CA дахин солигдсон (2026-11-07)
+
+asayake импортын dry-run-ыг Tom-ийн лаптопоос ажиллуулахад `HANDSHAKE_SSL_ERROR: certificate signature failure` → гаднаас шалгахад **production `/health` `"database":"down"`, `catalog.list` 500** (дэлгүүр бараагүй). 10-01-ний ослын давталт: HeatWave `MySQL_Endpoint_CA`-г ~2026-11-01-нд шинээр үүсгэсэн (шинэ CA `notAfter=Nov 1 2029`). Засвар (Tom VM дээр, 14:08 UTC): VM-ээс `openssl s_client -connect 10.0.1.227:3306 -starttls mysql -showcerts` → гинжийн 2-р сертификат (`MySQL_Endpoint_CA`) `Verify return code: 0 (ok)`, одоогийн `oci-ca.pem` → `7`; prod + staging-ийн `oci-ca.pem`-ийг сольж (хуучин нь `.bak-20261107`), `pm2 restart sugi sugi-staging` → гаднаас `/health` database up, каталог бараатай. Лаптопын CA-г `scp sugi-oci:sugi-asayake/oci-ca.pem`-ээр шинэчлэв (deploy фолдер + Documents\Projects). ⚠️ Хоёр удаа чимээгүй унасан (pool-ийн хуучин холболтууд хэд хоног амьд байдаг) — CA-ийн өөрчлөлтийг өдөр бүр шалгадаг болгох санал нээлттэй.
+
+---
+
 ## asayake.mn → каталог импорт скрипт (2026-11-07)
 
 Tom: *"asayake.mn deerh baraanii too, medeelel, zurgiig asayake.mn ees av!"* ба *"busad buh baraag ustga! zuwhun asayake.mn baraanuudiig ashigl!"* `/grill-me`-ийн шийдвэрүүдээр `scripts/import-asayake-products.ts` (dry-run анхдагч, `--apply`, `--hide-others`, `--from-json`, `--no-images`, `--limit`; `defaultdb`-д `--i-know-this-is-production`-гүй бол `refuseProductionDatabase` татгалзана). asayake.mn нь Next.js — `__NEXT_DATA__`-аас уншина; үндсэн жагсаалт `created_at desc`-ээр тогтворгүй эрэмбэлэгддэг тул (32 хуудаснаас 684/768) 203 ангилал бүрээр нэмж татаж 768/768 болгосон. "Устгах" = нийтлэлтээс хасах: `deleteAdminProduct` захиалга/нөөцийн түүхтэй барааг өөрөө татгалздаг. Ангиллын нэр ялгаатай (Үс арчилгаа/Үс ба бие…) тул `ASAYAKE_CATEGORY_ALIASES` + дэд ангиллыг эцэг рүү — тааралгүй үлдэх 634 → 7. Бичилт бүр `createAdminProduct`/`updateAdminProduct`-оор (хувилбар, салбарын нөөцийн ledger, кэш). Локал туршилтын DB дээр алдаа 0, нөөцийн зөрүү 0, давтан run-д өөрчлөлт 0. Дэлгэрэнгүй, командууд: PRODUCT-IMPORT.md. Staging/production run хараахан ХИЙГДЭЭГҮЙ (Tom-ийн лаптопоос).
